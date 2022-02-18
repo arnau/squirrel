@@ -95,11 +95,7 @@ fn xxmain() -> Result<(), anyhow::Error> {
 }
 
 fn main() -> anyhow::Result<()> {
-    let lrprev = "playground/catalogue/2021_JC_Candanedo-v11 Previews.lrdata/0/0977/09776BD3-3D3C-4359-BCD1-3D3C239D37B6-cb4480dde1544872ae29419ec404958c.lrprev";
-    let file = fs::File::open(lrprev)?;
-    let reader = io::BufReader::new(&file);
-
-    pyramid::extract(reader)?;
+    pyramid::process("playground/catalogue/")?;
 
     Ok(())
 }

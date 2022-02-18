@@ -46,23 +46,28 @@
 //! }
 //! ```
 
-// use anyhow::bail;
 use byteorder::{BigEndian, ReadBytesExt};
 use std::collections::HashMap;
-use std::fs;
-// use std::io;
 use std::io::prelude::*;
-// use std::path::PathBuf;
+
+use super::header::{self, Header};
+
+/// Represents an image pyramid.
+#[derive(Debug, Clone)]
+pub struct Pyramid {
+    pub header: Option<Header>,
+    pub blobs: HashMap<String, Vec<u8>>,
+}
 
 /// Any valid ".lrprev" file starts with "AgHg".
 pub static MAGIC_LRPREV: &[u8; 4] = b"AgHg";
 
-pub fn extract<R>(mut reader: R) -> anyhow::Result<()>
+pub fn extract<R>(mut reader: R) -> anyhow::Result<Pyramid>
 where
     R: Read,
 {
-    let mut metadata: String;
-    let mut levels: HashMap<String, Vec<u8>> = HashMap::new();
+    let mut blobs: HashMap<String, Vec<u8>> = HashMap::new();
+    let mut header: Option<Header> = None;
 
     loop {
         let mut buf = [0; 8];
@@ -98,11 +103,12 @@ where
 
                     match section.as_ref() {
                         "header" => {
-                            metadata = std::string::String::from_utf8_lossy(&buffer).into();
+                            let metadata = std::string::String::from_utf8_lossy(&buffer);
+                            header = header::decode(&metadata).ok();
                         }
                         // level_x where x is a number from 1 to n.
                         _ => {
-                            levels.insert(section, buffer);
+                            blobs.insert(section, buffer);
                         }
                     }
                 }
@@ -114,9 +120,7 @@ where
         }
     }
 
-    for (label, level) in levels {
-        fs::write(format!("{}.jpg", label), &level)?;
-    }
+    let pyramid = Pyramid { header, blobs };
 
-    Ok(())
+    Ok(pyramid)
 }

@@ -1,26 +1,44 @@
-mod header;
-mod parser;
+use std::fs;
+use std::io;
+use walkdir::WalkDir;
+
+pub mod header;
+pub mod parser;
+
+pub use header::Header;
 pub use parser::extract;
+pub use parser::Pyramid;
 
-/// Represents an image pyramid.
-#[derive(Debug, Clone)]
-pub struct Pyramid {
-    pub color_profile: String,
-    pub cropped_height: u32,
-    pub cropped_width: u32,
-    pub digest: String,
-    pub file_timestamp: u32,
-    pub format_version: u32,
-    pub from_proxy: bool,
-    pub levels: Vec<Level>,
-    pub quality: String,
-    pub uuid: String,
-}
+use crate::is_hidden;
 
-/// Represents an image pyramid level combining the header metadata and the JPEG data.
-#[derive(Debug, Clone)]
-pub struct Level {
-    pub height: u32,
-    pub width: u32,
-    pub blob: Vec<u8>,
+pub fn process(path: &str) -> anyhow::Result<()> {
+    let walker = WalkDir::new(path).into_iter();
+
+    let mut counter = 0;
+
+    for entry in walker.filter_entry(|e| !is_hidden(e)) {
+        let entry = entry?;
+
+        if entry.file_type().is_file() {
+            if let Some(ext) = entry.path().extension() {
+                if ext != "lrprev" {
+                    continue;
+                }
+            }
+
+            println!("{}", entry.path().display());
+
+            let file = fs::File::open(entry.path())?;
+            let reader = io::BufReader::new(&file);
+
+            let p = parser::extract(reader)?;
+            counter = counter + 1;
+
+            dbg!(p.header);
+        }
+    }
+
+    println!("total: {}", counter);
+
+    Ok(())
 }
