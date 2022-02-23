@@ -45,57 +45,90 @@ fn is_hidden(entry: &DirEntry) -> bool {
         .unwrap_or(false)
 }
 
-fn xxmain() -> Result<(), anyhow::Error> {
-    let walker = WalkDir::new("playground").into_iter();
+// fn xxmain() -> Result<(), anyhow::Error> {
+//     let walker = WalkDir::new("playground").into_iter();
+
+//     for entry in walker.filter_entry(|e| !is_hidden(e)) {
+//         let entry = entry?;
+//         let metadata = entry.metadata()?;
+
+//         if entry.file_type().is_file() {
+//             if let Some(ext) = entry.path().extension() {
+//                 if ext == "lrcat" {
+//                     continue;
+//                 }
+//                 if ext == "tif" {
+//                     continue;
+//                 }
+//                 if ext == "NEF" {
+//                     continue;
+//                 }
+//                 if ext == "psd" {
+//                     continue;
+//                 }
+//             }
+
+//             println!("{}", entry.path().display());
+//             // let access_stamp: DateTime<Utc> = metadata.accessed()?.into();
+//             // let image = image::open(&entry.path())?;
+//             // dbg!(access_stamp.to_rfc3339());
+//             // dbg!(image.dimensions());
+
+//             let file = std::fs::File::open(entry.path())?;
+//             let mut bufreader = std::io::BufReader::new(&file);
+//             let exifreader = exif::Reader::new();
+//             let exif = exifreader.read_from_container(&mut bufreader)?;
+//             for f in exif.fields() {
+//                 println!(
+//                     "{} {} {}",
+//                     f.tag,
+//                     f.ifd_num,
+//                     f.display_value().with_unit(&exif)
+//                 );
+//             }
+
+//             break;
+//         }
+//     }
+
+//     Ok(())
+// }
+
+fn main() -> anyhow::Result<()> {
+    use std::env;
+    use std::time::Instant;
+
+    let entrypoint = env::args().nth(1).unwrap();
+    // let entrypoint = "/Volumes/homes/greypistachio/GreyPistachio/GP_Photos/Professional_Photos";
+    // let entrypoint = "playground";
+
+    dbg!(&entrypoint);
+
+    let now = Instant::now();
+    let walker = WalkDir::new(entrypoint).into_iter();
+    let mut file_counter = 0;
+    let mut dir_counter = 0;
 
     for entry in walker.filter_entry(|e| !is_hidden(e)) {
         let entry = entry?;
-        let metadata = entry.metadata()?;
 
         if entry.file_type().is_file() {
-            if let Some(ext) = entry.path().extension() {
-                if ext == "lrcat" {
-                    continue;
-                }
-                if ext == "tif" {
-                    continue;
-                }
-                if ext == "NEF" {
-                    continue;
-                }
-                if ext == "psd" {
-                    continue;
-                }
-            }
-
-            println!("{}", entry.path().display());
-            // let access_stamp: DateTime<Utc> = metadata.accessed()?.into();
-            // let image = image::open(&entry.path())?;
-            // dbg!(access_stamp.to_rfc3339());
-            // dbg!(image.dimensions());
-
-            let file = std::fs::File::open(entry.path())?;
-            let mut bufreader = std::io::BufReader::new(&file);
-            let exifreader = exif::Reader::new();
-            let exif = exifreader.read_from_container(&mut bufreader)?;
-            for f in exif.fields() {
-                println!(
-                    "{} {} {}",
-                    f.tag,
-                    f.ifd_num,
-                    f.display_value().with_unit(&exif)
-                );
-            }
-
-            break;
+            file_counter = file_counter + 1;
+        } else {
+            dir_counter = dir_counter + 1;
         }
+
+        println!("{:?}: {}", entry.file_type(), entry.path().display());
     }
 
-    Ok(())
-}
+    println!("total files: {}", file_counter);
+    println!("total directories: {}", dir_counter);
 
-fn main() -> anyhow::Result<()> {
-    pyramid::process("playground/catalogue/")?;
+    let elapsed_time = now.elapsed();
+    println!(
+        "Running slow_function() took {} milliseconds.",
+        elapsed_time.as_millis()
+    );
 
     Ok(())
 }
