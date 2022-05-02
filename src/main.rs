@@ -3,27 +3,10 @@
 // use chrono::{DateTime, Utc};
 // use image::{GenericImageView, ImageFormat};
 // use std::collections::HashMap;
-use std::str::FromStr;
-use walkdir::DirEntry;
 
-mod entities;
-mod pyramid;
-mod repositories;
-mod result;
-mod source;
-
-use entities::storage::{Connection, Storage, params};
-use result::Result;
-use source::Source;
-use repositories::source::SourceRepository;
-
-fn is_hidden(entry: &DirEntry) -> bool {
-    entry
-        .file_name()
-        .to_str()
-        .map(|s| s.starts_with("."))
-        .unwrap_or(false)
-}
+use squirrel::entities::storage::{Connection, Storage, params};
+use squirrel::entities::source::Source;
+use squirrel::repositories::source::SourceRepository;
 
 fn main() -> anyhow::Result<()> {
     // use std::env;

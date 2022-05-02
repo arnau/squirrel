@@ -1,5 +1,4 @@
-use anyhow::Result;
-
+use crate::entities::result::Result;
 use crate::entities::storage::{params, Connection, Storage};
 
 trait Repository {}
