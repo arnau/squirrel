@@ -1,41 +1,21 @@
-use anyhow::bail;
-use byteorder::{BigEndian, ReadBytesExt};
-use chrono::{DateTime, Utc};
-use image::{GenericImageView, ImageFormat};
-use std::collections::HashMap;
-use std::fs;
-use std::io;
-use std::io::prelude::*;
-use std::path::PathBuf;
-use walkdir::{DirEntry, WalkDir};
+// use anyhow::bail;
+// use byteorder::{BigEndian, ReadBytesExt};
+// use chrono::{DateTime, Utc};
+// use image::{GenericImageView, ImageFormat};
+// use std::collections::HashMap;
+use std::str::FromStr;
+use walkdir::DirEntry;
 
+mod entities;
 mod pyramid;
+mod repositories;
+mod result;
+mod source;
 
-/// Represents a Run
-/// TODO: Find a good name
-///
-/// It should capture paradata on a Squirrel particular run. For example, the timestamp when
-/// Squirrel ran gathering all information.
-struct Run {
-    id: String,
-    timestamp: String,
-}
-
-/// Represents the link between an image and the run that gathered it.
-struct ImageLog {
-    run_id: String,
-    image_path: String,
-}
-
-/// Represents an image.
-#[derive(Debug, Clone)]
-struct Image {
-    path: PathBuf,
-    format: String,             // enum Format
-    modification_stamp: String, // SystemTime
-    access_stamp: String,
-    creation_stamp: String,
-}
+use entities::storage::{Connection, Storage, params};
+use result::Result;
+use source::Source;
+use repositories::source::SourceRepository;
 
 fn is_hidden(entry: &DirEntry) -> bool {
     entry
@@ -45,90 +25,83 @@ fn is_hidden(entry: &DirEntry) -> bool {
         .unwrap_or(false)
 }
 
-// fn xxmain() -> Result<(), anyhow::Error> {
-//     let walker = WalkDir::new("playground").into_iter();
-
-//     for entry in walker.filter_entry(|e| !is_hidden(e)) {
-//         let entry = entry?;
-//         let metadata = entry.metadata()?;
-
-//         if entry.file_type().is_file() {
-//             if let Some(ext) = entry.path().extension() {
-//                 if ext == "lrcat" {
-//                     continue;
-//                 }
-//                 if ext == "tif" {
-//                     continue;
-//                 }
-//                 if ext == "NEF" {
-//                     continue;
-//                 }
-//                 if ext == "psd" {
-//                     continue;
-//                 }
-//             }
-
-//             println!("{}", entry.path().display());
-//             // let access_stamp: DateTime<Utc> = metadata.accessed()?.into();
-//             // let image = image::open(&entry.path())?;
-//             // dbg!(access_stamp.to_rfc3339());
-//             // dbg!(image.dimensions());
-
-//             let file = std::fs::File::open(entry.path())?;
-//             let mut bufreader = std::io::BufReader::new(&file);
-//             let exifreader = exif::Reader::new();
-//             let exif = exifreader.read_from_container(&mut bufreader)?;
-//             for f in exif.fields() {
-//                 println!(
-//                     "{} {} {}",
-//                     f.tag,
-//                     f.ifd_num,
-//                     f.display_value().with_unit(&exif)
-//                 );
-//             }
-
-//             break;
-//         }
-//     }
-
-//     Ok(())
-// }
-
 fn main() -> anyhow::Result<()> {
-    use std::env;
-    use std::time::Instant;
+    // use std::env;
+    // use std::time::Instant;
 
-    let entrypoint = env::args().nth(1).unwrap();
-    // let entrypoint = "/Volumes/homes/greypistachio/GreyPistachio/GP_Photos/Professional_Photos";
-    // let entrypoint = "playground";
+    // let entrypoint = env::args().nth(1).unwrap();
+    // // let entrypoint = "/Volumes/homes/greypistachio/GreyPistachio/GP_Photos/Professional_Photos";
+    // // let entrypoint = "playground";
 
-    dbg!(&entrypoint);
+    // dbg!(&entrypoint);
 
-    let now = Instant::now();
-    let walker = WalkDir::new(entrypoint).into_iter();
-    let mut file_counter = 0;
-    let mut dir_counter = 0;
+    // let now = Instant::now();
+    // let walker = WalkDir::new(entrypoint).into_iter();
+    // let mut file_counter = 0;
+    // let mut dir_counter = 0;
 
-    for entry in walker.filter_entry(|e| !is_hidden(e)) {
-        let entry = entry?;
+    // for entry in walker.filter_entry(|e| !is_hidden(e)) {
+    //     let entry = entry?;
 
-        if entry.file_type().is_file() {
-            file_counter = file_counter + 1;
-        } else {
-            dir_counter = dir_counter + 1;
-        }
+    //     if entry.file_type().is_file() {
+    //         file_counter = file_counter + 1;
+    //     } else {
+    //         dir_counter = dir_counter + 1;
+    //     }
 
-        println!("{:?}: {}", entry.file_type(), entry.path().display());
+    //     println!("{:?}: {}", entry.file_type(), entry.path().display());
+    // }
+
+    // println!("total files: {}", file_counter);
+    // println!("total directories: {}", dir_counter);
+
+    // let elapsed_time = now.elapsed();
+    // println!(
+    //     "Running slow_function() took {} milliseconds.",
+    //     elapsed_time.as_millis()
+    // );
+
+    let source1 = Source::from_str(
+        "/Users/arnau/kitchen/squirrel/playground/catalogue/2021_JC_Candanedo-v11.lrcat",
+    )?;
+    let source = Source::from_str(
+        "/Users/arnau/kitchen/squirrel/playground/catalogue/2019_JC_Candanedo-v11.lrcat",
+    )?;
+
+    dbg!(&source);
+
+    let pool = Storage::file(&source.path)?;
+
+    explore(
+        pool.get()?,
+        "SELECT id_local, absolutePath FROM AgLibraryRootFolder",
+        params![],
+        |row| {
+            let id: u32 = row.get(0)?;
+            let path: String = row.get(1)?;
+
+            Ok((id, path))
+        },
+    )?;
+
+    let version = SourceRepository::version(pool.get()?)?;
+    println!("{}", version);
+
+    Ok(())
+}
+
+fn explore<T, P, F>(conn: Connection, query: &str, params: P, f: F) -> Result<()>
+where
+    P: rusqlite::Params,
+    F: FnMut(&rusqlite::Row<'_>) -> rusqlite::Result<T>,
+    T: std::fmt::Debug,
+{
+    let mut stmt = conn.prepare(query)?;
+    let root_folders = stmt.query_map(params, f)?;
+
+    for row in root_folders {
+        dbg!(row?);
     }
-
-    println!("total files: {}", file_counter);
-    println!("total directories: {}", dir_counter);
-
-    let elapsed_time = now.elapsed();
-    println!(
-        "Running slow_function() took {} milliseconds.",
-        elapsed_time.as_millis()
-    );
 
     Ok(())
 }

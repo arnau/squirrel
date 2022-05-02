@@ -22,20 +22,18 @@ CREATE TABLE IF NOT EXISTS source (
   path              text NOT NULL,
   -- e.g. '2022-02-22/', '2022-02-22/2023-01-01'
   /* active_period text NOT NULL, */
-  creation_stamp    timestamp NOT NULL,
-  deprecation_stamp timestamp
+  -- TODO:
+  /* creation_stamp    timestamp NOT NULL, */
+  /* deprecation_stamp timestamp */
 );
 
--- A sink to point to. BackBlaze, Synology.
--- TODO: is it possible to have more than one backblaze bucket?
-CREATE TABLE IF NOT EXISTS sink (
+-- Mapping to AgLibraryRootFolder
+CREATE TABLE IF NOT EXISTS root (
   -- backblaze bucket id
   id   text NOT NULL PRIMARY KEY,
   -- backblaze root path
   -- TODO: check whether this is needed when using the API
   path text NOT NULL,
-  -- backblaze, synology
-  kind text NOT NULL
 );
 
 -- A file system entry. Either a folder or a file.
@@ -48,17 +46,14 @@ CREATE TABLE IF NOT EXISTS entry (
   name      text NOT NULL,
   parent_id text,
   kind      text, -- (file, folder)
-
-  UNIQUE (path),
-  FOREIGN KEY (parent_id) REFERENCES entry (id)
-);
-
-CREATE TABLE IF NOT EXISTS source_entry (
   source_id text NOT NULL,
-  entry_id  text NOT NULL,
+  root_id   text NOT NULL,
 
-  UNIQUE (source_id, entry_id),
-  FOREIGN KEY (source_id) REFERENCES source (id)
+  // review uniqueness
+  UNIQUE (path, source_id),
+  FOREIGN KEY (parent_id) REFERENCES entry (id),
+  FOREIGN KEY (source_id) REFERENCES source (id),
+  FOREIGN KEY (root_id) REFERENCES root (id)
 );
 
 
@@ -81,3 +76,4 @@ CREATE TABLE IF NOT EXISTS asset (
   pyramid_uuid   text NOT NULL,
   pyramid_digest text NOT NULL
 );
+
