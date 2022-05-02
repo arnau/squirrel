@@ -1,4 +1,4 @@
-use crate::entities::result::Result;
+use crate::entities::Result;
 use crate::entities::storage::{params, Connection, Storage};
 
 trait Repository {}
@@ -27,4 +27,23 @@ impl SourceRepository {
             Ok(value)
         })
     }
+
+    pub fn id(conn: Connection) -> Result<String> {
+        // casting as text to minimise surprises. This table has a mix of types.
+        // For example, `Adobe_entityIDCounter` autocasts as `Real`.
+        let query = r#"
+        SELECT
+            cast(value as text)
+        FROM
+            Adobe_variablesTable
+        WHERE
+            name = 'Adobe_storeProviderID'
+        "#;
+        Storage::get_one(conn, query, params![], |row| {
+            let value: String = row.get(0)?;
+
+            Ok(value)
+        })
+    }
+
 }

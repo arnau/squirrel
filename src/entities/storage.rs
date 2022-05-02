@@ -36,6 +36,22 @@ impl Storage {
             None => anyhow::bail!(StorageError::EmptySet(query.to_string())),
         }
     }
+
+pub fn explore<T, P, F>(conn: Connection, query: &str, params: P, f: F) -> Result<()>
+where
+    P: rusqlite::Params,
+    F: FnMut(&rusqlite::Row<'_>) -> rusqlite::Result<T>,
+    T: std::fmt::Debug,
+{
+    let mut stmt = conn.prepare(query)?;
+    let root_folders = stmt.query_map(params, f)?;
+
+    for row in root_folders {
+        dbg!(row?);
+    }
+
+    Ok(())
+    }
 }
 
 #[derive(Error, Debug)]

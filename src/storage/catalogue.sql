@@ -20,6 +20,8 @@ CREATE TABLE IF NOT EXISTS source (
   kind              text NOT NULL,
   -- e.g. '/absolute/path/to/catalogue'
   path              text NOT NULL,
+  -- e.g. '1100000'
+  version           text NOT NULL,
   -- e.g. '2022-02-22/', '2022-02-22/2023-01-01'
   /* active_period text NOT NULL, */
   -- TODO:
