@@ -1,3 +1,4 @@
+use crate::entities::storage::params;
 use crate::entities::{Result, Source, Storage};
 use crate::repositories::source::SourceRepository;
 
@@ -17,9 +18,15 @@ use crate::repositories::source::SourceRepository;
 /// `
 /// Plan:
 ///
+/// - [ ] Connect to Squirrel catalogue.
 /// - [x] Check version is known.
 /// - [x] Find ID.
-/// - [ ]
+/// - [x] Attach aux databases.
+/// - [ ] Check source id exists. Insert if not, abort otheriwse.
+/// - [ ] Insert root folders into table root. AgLibraryRootFolder.
+/// - [ ] Insert folders into table entry. AgLibraryFolder. Reconstruct full paths.
+/// - [ ] Insert files into table entry. AgLibraryFile. Reconstruct full paths.
+/// - [ ] Insert assets into table asset. Mix of Adobe_Images, previews.ImageCacheEntry, etc.
 pub fn import(path: &str) -> Result<()> {
     let pool = Storage::file(path)?;
     let version = SourceRepository::version(pool.get()?)?;
@@ -31,14 +38,22 @@ pub fn import(path: &str) -> Result<()> {
     let id = SourceRepository::id(pool.get()?)?;
     let source = Source::try_new(id, version, path)?;
 
+    SourceRepository::attach_aux(pool.get()?, &source)?;
+
     dbg!(&source);
-    dbg!(source.catalogue_path());
-    dbg!(source.previews_path());
+
+    Storage::explore(pool.get()?, "pragma table_list", params![], |row| {
+        let schema: String = row.get(0)?;
+        let table: String = row.get(1)?;
+        let kind: String = row.get(2)?;
+
+        Ok((schema, table, kind))
+    })?;
 
     Storage::explore(
         pool.get()?,
         "SELECT id_local, absolutePath FROM AgLibraryRootFolder",
-        crate::entities::storage::params![],
+        params![],
         |row| {
             let id: u32 = row.get(0)?;
             let path: String = row.get(1)?;

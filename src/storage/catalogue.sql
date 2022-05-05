@@ -7,35 +7,38 @@
 -- Metadata about the catalogue. TODO: Should this be in para?
 CREATE TABLE IF NOT EXISTS catalogue_metadata (
   version text NOT NULL,
-  creation_stamp timestamp NOT NULL
+  insert_stamp timestamp NOT NULL
 );
 
 -- A source to gather data from.
 CREATE TABLE IF NOT EXISTS source (
-  -- e.g. '2021_JC_Candanedo'
   id                text NOT NULL PRIMARY KEY,
   -- e.g. '2021_JC_Candanedo-v11'
   name              text NOT NULL,
-  -- e.g. 'lightroom'
-  kind              text NOT NULL,
   -- e.g. '/absolute/path/to/catalogue'
   path              text NOT NULL,
   -- e.g. '1100000'
   version           text NOT NULL,
-  -- e.g. '2022-02-22/', '2022-02-22/2023-01-01'
-  /* active_period text NOT NULL, */
-  -- TODO:
-  /* creation_stamp    timestamp NOT NULL, */
-  /* deprecation_stamp timestamp */
+
+  -- para
+  insert_stamp timestamp NOT NULL,
+  update_stamp timestamp NOT NULL,
 );
 
--- Mapping to AgLibraryRootFolder
+-- AgLibraryRootFolder copy
 CREATE TABLE IF NOT EXISTS root (
-  -- backblaze bucket id
-  id   text NOT NULL PRIMARY KEY,
-  -- backblaze root path
-  -- TODO: check whether this is needed when using the API
-  path text NOT NULL,
+  id        text NOT NULL PRIMARY KEY,
+  name      text NOT NULL,
+  -- filesystem root path
+  path      text NOT NULL,
+  source_id text NOT NULL,
+
+  -- para
+  insert_stamp timestamp NOT NULL,
+  update_stamp timestamp NOT NULL,
+
+  UNIQUE (path, source_id),
+  FOREIGN KEY (source_id) REFERENCES source (id)
 );
 
 -- A file system entry. Either a folder or a file.
@@ -51,7 +54,11 @@ CREATE TABLE IF NOT EXISTS entry (
   source_id text NOT NULL,
   root_id   text NOT NULL,
 
-  // review uniqueness
+  -- para
+  insert_stamp timestamp NOT NULL,
+  update_stamp timestamp NOT NULL,
+
+  -- review uniqueness
   UNIQUE (path, source_id),
   FOREIGN KEY (parent_id) REFERENCES entry (id),
   FOREIGN KEY (source_id) REFERENCES source (id),
@@ -61,21 +68,22 @@ CREATE TABLE IF NOT EXISTS entry (
 
 -- Any entry that is a file and is an image
 CREATE TABLE IF NOT EXISTS asset (
-  -- TODO: ?
-  id             text NOT NULL PRIMARY KEY,
-  entry_id       text NOT NULL,
+  id                text NOT NULL PRIMARY KEY,
+  entry_id          text NOT NULL,
   -- from Adobe_images.rating
-  rating         number,
+  rating            number,
   -- from Adobe_images.colorLabel
-  label          text,
+  label             text,
   -- TIFF, JPEG, etc
-  format         text NOT NULL,
-  width          number NOT NULL,
-  height         number NOT NULL,
-  orientation    text NOT NULL,
+  format            text NOT NULL,
+  width             number NOT NULL,
+  height            number NOT NULL,
+  orientation       text NOT NULL,
   -- from previews.ImageCacheEntry.(uuid || '-' || digest)
   /* pyramid_id text NOT NULL */
-  pyramid_uuid   text NOT NULL,
-  pyramid_digest text NOT NULL
+  pyramid_uuid      text NOT NULL,
+  pyramid_digest    text NOT NULL,
+
+  modification_time timestamp NOT NULL
 );
 
