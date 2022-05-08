@@ -1,9 +1,26 @@
+use entities::{storage::Connection, Result};
+use walkdir::DirEntry;
+use std::include_str;
+use lazy_static::lazy_static;
+
+
 pub mod entities;
 pub mod pyramid;
 pub mod repositories;
 pub mod services;
+pub mod functions;
 
-use walkdir::DirEntry;
+lazy_static! {
+    static ref BOOTSTRAP: &'static str = include_str!("./storage/catalogue.sql");
+}
+
+pub fn bootstrap(conn: &Connection) -> Result<()> {
+    conn.execute_batch(&BOOTSTRAP)?;
+    functions::add_parent_function(&conn)?;
+
+    Ok(())
+}
+
 
 fn is_hidden(entry: &DirEntry) -> bool {
     entry

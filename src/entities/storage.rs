@@ -1,8 +1,9 @@
 use anyhow::Result;
-use thiserror::Error;
+use std::ops::Deref;
 use std::path::Path;
+use thiserror::Error;
 
-pub use rusqlite::{ params, Params };
+pub use rusqlite::{params, Params, Transaction};
 
 pub type ConnectionManager = r2d2_sqlite::SqliteConnectionManager;
 pub type Connection = r2d2::PooledConnection<ConnectionManager>;
@@ -22,10 +23,17 @@ impl Storage {
         Ok(r2d2::Pool::new(manager)?)
     }
 
-    pub fn get_one<T, P, F>(conn: Connection, query: &str, p: P, f: F) -> Result<T>
+    pub fn memory() -> Result<Pool> {
+        let manager = ConnectionManager::memory();
+
+        Ok(r2d2::Pool::new(manager)?)
+    }
+
+    pub fn get_one<C, T, P, F>(conn: &C, query: &str, p: P, f: F) -> Result<T>
     where
         P: Params,
         F: FnMut(&rusqlite::Row<'_>) -> rusqlite::Result<T>,
+        C: Deref<Target = rusqlite::Connection>,
         T: std::fmt::Debug,
     {
         let mut stmt = conn.prepare(query)?;
@@ -37,20 +45,70 @@ impl Storage {
         }
     }
 
-pub fn explore<T, P, F>(conn: Connection, query: &str, params: P, f: F) -> Result<()>
-where
-    P: rusqlite::Params,
-    F: FnMut(&rusqlite::Row<'_>) -> rusqlite::Result<T>,
-    T: std::fmt::Debug,
-{
-    let mut stmt = conn.prepare(query)?;
-    let root_folders = stmt.query_map(params, f)?;
+    pub fn get<C, T, P, F>(conn: &C, query: &str, params: P, f: F) -> Result<Vec<T>>
+    where
+        P: rusqlite::Params,
+        F: FnMut(&rusqlite::Row<'_>) -> rusqlite::Result<T>,
+        C: Deref<Target = rusqlite::Connection>,
+        T: std::fmt::Debug,
+    {
+        let mut stmt = conn.prepare(query)?;
+        let rows: rusqlite::Result<Vec<_>> = stmt.query_map(params, f)?.collect();
 
-    for row in root_folders {
-        dbg!(row?);
+        Ok(rows?)
     }
 
-    Ok(())
+    pub fn get_filtered<C, T, P, F>(conn: &C, query: &str, params: P, mut f: F) -> Result<Vec<T>>
+    where
+        P: rusqlite::Params,
+        F: FnMut(&rusqlite::Row<'_>) -> rusqlite::Result<Option<T>>,
+        C: Deref<Target = rusqlite::Connection>,
+        T: std::fmt::Debug,
+    {
+        let mut stmt = conn.prepare(query)?;
+        let mut rows = stmt.query(params)?;
+        let mut result = Vec::new();
+
+        while let Some(row) = rows.next()? {
+            if let Some(value) = f(&row)? {
+                result.push(value);
+            }
+        }
+
+        Ok(result)
+    }
+
+
+    pub fn explore<C, T, P, F>(conn: &C, query: &str, params: P, f: F) -> Result<()>
+    where
+        P: rusqlite::Params,
+        F: FnMut(&rusqlite::Row<'_>) -> rusqlite::Result<T>,
+        C: Deref<Target = rusqlite::Connection>,
+        T: std::fmt::Debug,
+    {
+        let mut stmt = conn.prepare(query)?;
+        let rows = stmt.query_map(params, f)?;
+
+        for row in rows {
+            dbg!(row?);
+        }
+
+        Ok(())
+    }
+
+    pub fn table_list<C>(conn: &C) -> Result<()>
+    where
+        C: Deref<Target = rusqlite::Connection>,
+    {
+        Self::explore(conn, "pragma table_list", params![], |row| {
+            let schema: String = row.get(0)?;
+            let table: String = row.get(1)?;
+            let kind: String = row.get(2)?;
+
+            Ok((schema, table, kind))
+        })?;
+
+        Ok(())
     }
 }
 

@@ -4,10 +4,10 @@
  */
 
 
--- Metadata about the catalogue. TODO: Should this be in para?
+-- Metadata about the Squirrel catalogue.
 CREATE TABLE IF NOT EXISTS catalogue_metadata (
-  version text NOT NULL,
-  insert_stamp timestamp NOT NULL
+  key   text NOT NULL,
+  value text NOT NULL
 );
 
 -- A source to gather data from.
@@ -17,25 +17,18 @@ CREATE TABLE IF NOT EXISTS source (
   name              text NOT NULL,
   -- e.g. '/absolute/path/to/catalogue'
   path              text NOT NULL,
-  -- e.g. '1100000'
-  version           text NOT NULL,
-
-  -- para
-  insert_stamp timestamp NOT NULL,
-  update_stamp timestamp NOT NULL,
+  -- e.g. 1100000
+  version           integer NOT NULL
 );
 
 -- AgLibraryRootFolder copy
 CREATE TABLE IF NOT EXISTS root (
+  -- id_global
   id        text NOT NULL PRIMARY KEY,
   name      text NOT NULL,
   -- filesystem root path
   path      text NOT NULL,
   source_id text NOT NULL,
-
-  -- para
-  insert_stamp timestamp NOT NULL,
-  update_stamp timestamp NOT NULL,
 
   UNIQUE (path, source_id),
   FOREIGN KEY (source_id) REFERENCES source (id)
@@ -43,33 +36,27 @@ CREATE TABLE IF NOT EXISTS root (
 
 -- A file system entry. Either a folder or a file.
 CREATE TABLE IF NOT EXISTS entry (
-  -- TODO: digest of the path
+  -- id_global
   id        text NOT NULL PRIMARY KEY,
-  -- path starting from the source root.
-  path      text NOT NULL,
   -- the last stem from the path.
-  name      text NOT NULL,
+  -- name      text NOT NULL,
+  path      text NOT NULL,
+  kind      text NOT NULL, -- (file, folder)
   parent_id text,
-  kind      text, -- (file, folder)
-  source_id text NOT NULL,
   root_id   text NOT NULL,
-
-  -- para
-  insert_stamp timestamp NOT NULL,
-  update_stamp timestamp NOT NULL,
+  source_id text NOT NULL,
 
   -- review uniqueness
   UNIQUE (path, source_id),
   FOREIGN KEY (parent_id) REFERENCES entry (id),
-  FOREIGN KEY (source_id) REFERENCES source (id),
-  FOREIGN KEY (root_id) REFERENCES root (id)
+  FOREIGN KEY (root_id)   REFERENCES root (id),
+  FOREIGN KEY (source_id) REFERENCES source (id)
 );
 
 
 -- Any entry that is a file and is an image
 CREATE TABLE IF NOT EXISTS asset (
   id                text NOT NULL PRIMARY KEY,
-  entry_id          text NOT NULL,
   -- from Adobe_images.rating
   rating            number,
   -- from Adobe_images.colorLabel
@@ -79,11 +66,20 @@ CREATE TABLE IF NOT EXISTS asset (
   width             number NOT NULL,
   height            number NOT NULL,
   orientation       text NOT NULL,
-  -- from previews.ImageCacheEntry.(uuid || '-' || digest)
-  /* pyramid_id text NOT NULL */
+
   pyramid_uuid      text NOT NULL,
   pyramid_digest    text NOT NULL,
+  pyramid_filename  text AS (pyramid_uuid || '-' || pyramid_digest || '.lrprev'),
 
-  modification_time timestamp NOT NULL
+  modification_time timestamp NOT NULL,
+
+  entry_id          text NOT NULL,
+
+  FOREIGN KEY (entry_id) REFERENCES entry (id)
 );
 
+-- event log
+CREATE TABLE IF NOT EXISTS event (
+  stamp timestamp NOT NULL,
+  data  text NOT NULL
+);
