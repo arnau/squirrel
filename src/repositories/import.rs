@@ -1,9 +1,10 @@
 use crate::entities::import::Import;
 use crate::entities::storage::{params, Connection, Storage};
-use crate::entities::Result;
+use crate::entities::{Event, Result};
 use crate::repositories::Repository;
 use std::ops::Deref;
 use std::path::Path;
+use serde_json::json;
 
 pub struct ImportRepository;
 
@@ -285,7 +286,10 @@ impl ImportRepository {
         Ok(())
     }
 
-    pub fn check_broken_pyramids<C>(conn: &C, previews_path: &Path) -> Result<Vec<(String, String, String)>>
+    pub fn check_broken_pyramids<C>(
+        conn: &C,
+        previews_path: &Path,
+    ) -> Result<Vec<Event>>
     where
         C: Deref<Target = Connection>,
     {
@@ -316,7 +320,16 @@ impl ImportRepository {
                 if pyramid_fullpath.exists() {
                     Ok(None)
                 } else {
-                    Ok(Some((entry_id, path, pyramid_fullpath.display().to_string())))
+                    let event = Event::new(
+                        "import:missing_pyramid",
+                        json!({
+                            "entry_id": entry_id,
+                            "entry_path": path,
+                            "pyramid_path": pyramid_fullpath,
+                        }),
+                    );
+
+                    Ok(Some(event))
                 }
             },
         )

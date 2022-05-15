@@ -44,21 +44,10 @@ pub fn import(pool: &Pool, path: &str) -> Result<()> {
     let mut previews_path = source.previews_path()?;
     previews_path.pop();
 
-    // TODO: Add events for any borken pyramid.
     let broken_pyramids = ImportRepository::check_broken_pyramids(&tx, &previews_path)?;
 
-    for (entry_id, entry_path, pyramid_path) in broken_pyramids {
-        EventRepository::insert(
-            &tx,
-            &Event::new(
-                "import:missing_pyramid",
-                json!({
-                    "entry_id": entry_id,
-                    "entry_path": entry_path,
-                    "pyramid_path": pyramid_path,
-                }),
-            ),
-        )?;
+    for event in broken_pyramids {
+        EventRepository::insert(&tx, &event)?;
     }
 
     tx.commit()?;
