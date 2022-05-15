@@ -228,6 +228,7 @@ impl ImportRepository {
                 id,
                 entry_id,
                 rating,
+                flag,
                 label,
                 format,
                 width,
@@ -242,6 +243,7 @@ impl ImportRepository {
                 file.id_global AS entry_id,
 
                 COALESCE(image.rating, 0) AS rating,
+                image.pick AS flag,
                 image.colorLabels AS label,
                 image.fileFormat AS format,
                 image.fileWidth AS width,

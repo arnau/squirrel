@@ -59,6 +59,8 @@ CREATE TABLE IF NOT EXISTS asset (
   id                text NOT NULL PRIMARY KEY,
   -- from Adobe_images.rating
   rating            number,
+  -- from Adobe_images.pick
+  flag              boolean,
   -- from Adobe_images.colorLabel
   label             text,
   -- TIFF, JPEG, etc
