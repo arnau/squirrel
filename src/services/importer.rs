@@ -1,9 +1,10 @@
+use crate::entities::import::{Import, ImportError};
+use crate::entities::Event;
 use crate::entities::{storage::Pool, Result};
 use crate::repositories::import::ImportRepository;
+use crate::repositories::EventRepository;
 use anyhow::anyhow as ah;
-use std::path::PathBuf;
-use std::str::FromStr;
-use thiserror::Error;
+use serde_json::json;
 
 /// Attempts to import the information contained in the given Lightroom catalogue.
 ///
@@ -19,14 +20,14 @@ use thiserror::Error;
 ///     root-pixels.db
 /// ```
 pub fn import(pool: &Pool, path: &str) -> Result<()> {
-    let source = Import::try_new(path)?;
     let mut conn = pool.get()?;
 
-    dbg!(&source);
-
-    ImportRepository::attach_catalogue(&conn, &source)?;
+    EventRepository::insert(&conn, &Event::new("import:start", json!({ "path": path })))?;
 
     let tx = conn.transaction()?;
+    let source = Import::try_new(path)?;
+
+    ImportRepository::attach_catalogue(&tx, &source)?;
 
     let version = ImportRepository::version(&tx)?;
 
@@ -40,110 +41,34 @@ pub fn import(pool: &Pool, path: &str) -> Result<()> {
     ImportRepository::copy_files(&tx)?;
     ImportRepository::copy_assets(&tx)?;
 
-    tx.commit()?;
-
     let mut previews_path = source.previews_path()?;
     previews_path.pop();
 
-    let broken_pyramids = ImportRepository::check_broken_pyramids(&conn, &previews_path)?;
+    // TODO: Add events for any borken pyramid.
+    let broken_pyramids = ImportRepository::check_broken_pyramids(&tx, &previews_path)?;
 
-    dbg!(broken_pyramids);
+    for (entry_id, entry_path, pyramid_path) in broken_pyramids {
+        EventRepository::insert(
+            &tx,
+            &Event::new(
+                "import:missing_pyramid",
+                json!({
+                    "entry_id": entry_id,
+                    "entry_path": entry_path,
+                    "pyramid_path": pyramid_path,
+                }),
+            ),
+        )?;
+    }
+
+    tx.commit()?;
 
     ImportRepository::detach_catalogue(&conn)?;
+    EventRepository::insert(&conn, &Event::new("import:end", json!({ "path": path })))?;
+
+    let events = EventRepository::head(&conn, 4)?;
+
+    dbg!(events);
 
     Ok(())
-}
-
-#[derive(Debug, Clone)]
-pub struct Import {
-    pub name: String,
-    pub path: PathBuf,
-}
-
-impl Import {
-    pub fn try_new(spath: &str) -> Result<Self> {
-        let path = PathBuf::from_str(spath)?;
-        let name = path
-            .file_stem()
-            .ok_or(ah!(ImportError::NotAFile(spath.to_string())))?
-            .to_str()
-            .ok_or(ah!(ImportError::InvalidOsPath))?
-            .to_string();
-
-        if let Some(extension) = path.extension() {
-            if extension != "lrcat" {
-                return Err(ah!(ImportError::UnexpectedExtension));
-            }
-        } else {
-            return Err(ah!(ImportError::MissingExtension));
-        };
-
-        let parent = path
-            .parent()
-            .expect("Parent directory to exist.")
-            .to_path_buf();
-
-        let source = Import { name, path: parent };
-
-        Ok(source)
-    }
-
-    /// Returns the path to the `.lrcat` database.
-    pub fn catalogue_path(&self) -> Result<PathBuf> {
-        let path = self.path.join(&self.name).with_extension("lrcat");
-        if !&path.is_file() {
-            return Err(ah!(ImportError::MissingFile(path.to_string_lossy().into())));
-        }
-
-        Ok(path)
-    }
-
-    /// Returns the path to the `previews.db` database.
-    pub fn previews_path(&self) -> Result<PathBuf> {
-        let name = format!("{} Previews.lrdata/previews.db", &self.name);
-        let path = self.path.join(name);
-        if !&path.is_file() {
-            return Err(ah!(ImportError::MissingFile(path.to_string_lossy().into())));
-        }
-
-        Ok(path)
-    }
-
-    /// Returns the path to the `root-pixels.db` database.
-    pub fn rootpixels_path(&self) -> Result<PathBuf> {
-        let name = format!("{} Previews.lrdata/root-pixels.db", &self.name);
-        let path = self.path.join(name);
-        if !&path.is_file() {
-            return Err(ah!(ImportError::MissingFile(path.to_string_lossy().into())));
-        }
-
-        Ok(path)
-    }
-
-    /// Returns the path to the `helper.db` database.
-    pub fn helper_path(&self) -> Result<PathBuf> {
-        let name = format!("{} Helper.lrdata/helper.db", &self.name);
-        let path = self.path.join(name);
-        if !&path.is_file() {
-            return Err(ah!(ImportError::MissingFile(path.to_string_lossy().into())));
-        }
-
-        Ok(path)
-    }
-}
-
-#[derive(Error, Debug)]
-pub enum ImportError {
-    #[error("Unknown source kind. No extension found.")]
-    MissingExtension,
-    #[error("The given source path is not a valid string for this operating system.")]
-    InvalidOsPath,
-    #[error("Unknown source kind. The file extension must be 'lrcat'.")]
-    UnexpectedExtension,
-    #[error("The given source path is not a file: {0}")]
-    NotAFile(String),
-    #[error("File not found: {0}")]
-    MissingFile(String),
-    #[error("Unknown Lightroom version {0}")]
-    UnknownVersion(usize),
 }

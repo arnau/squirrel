@@ -1,8 +1,7 @@
-use rusqlite::Connection;
-
-use crate::entities::{storage::params, Result, Storage};
+use crate::entities::import::Import;
+use crate::entities::storage::{params, Connection, Storage};
+use crate::entities::Result;
 use crate::repositories::Repository;
-use crate::services::importer::Import;
 use std::ops::Deref;
 use std::path::Path;
 
@@ -41,6 +40,7 @@ impl ImportRepository {
         DETACH DATABASE catalogue;
         DETACH DATABASE previews;
         DETACH DATABASE helper;
+        PRAGMA foreign_keys = ON;
         "#,
         );
 
@@ -283,14 +283,15 @@ impl ImportRepository {
         Ok(())
     }
 
-    pub fn check_broken_pyramids<C>(conn: &C, previews_path: &Path) -> Result<Vec<(String, String)>>
+    pub fn check_broken_pyramids<C>(conn: &C, previews_path: &Path) -> Result<Vec<(String, String, String)>>
     where
-        C: Deref<Target = rusqlite::Connection>,
+        C: Deref<Target = Connection>,
     {
         Storage::get_filtered(
             conn,
             r#"
         SELECT
+            entry.id,
             entry.path,
             asset.pyramid_filename
         FROM
@@ -301,17 +302,19 @@ impl ImportRepository {
         "#,
             params![],
             |row| {
-                let path: String = row.get(0)?;
-                let pyramid_filename: String = row.get(1)?;
+                let entry_id: String = row.get(0)?;
+                let path: String = row.get(1)?;
+                let pyramid_filename: String = row.get(2)?;
 
                 let nibble = pyramid_filename.get(0..1).unwrap();
                 let two_bytes = pyramid_filename.get(0..4).unwrap();
                 let pyramid_path = format!("{}/{}/{}", nibble, two_bytes, pyramid_filename);
+                let pyramid_fullpath = previews_path.join(&pyramid_path);
 
-                if previews_path.join(&pyramid_path).exists() {
+                if pyramid_fullpath.exists() {
                     Ok(None)
                 } else {
-                    Ok(Some((path, pyramid_path)))
+                    Ok(Some((entry_id, path, pyramid_fullpath.display().to_string())))
                 }
             },
         )

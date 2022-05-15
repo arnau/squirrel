@@ -3,10 +3,10 @@ use std::ops::Deref;
 use std::path::Path;
 use thiserror::Error;
 
-pub use rusqlite::{params, Params, Transaction};
+pub use rusqlite::{params, Params, Transaction, Connection};
 
 pub type ConnectionManager = r2d2_sqlite::SqliteConnectionManager;
-pub type Connection = r2d2::PooledConnection<ConnectionManager>;
+pub type PooledConnection = r2d2::PooledConnection<ConnectionManager>;
 pub type Pool = r2d2::Pool<ConnectionManager>;
 
 /// Represents the data storage system repositories operate on.
@@ -33,7 +33,7 @@ impl Storage {
     where
         P: Params,
         F: FnMut(&rusqlite::Row<'_>) -> rusqlite::Result<T>,
-        C: Deref<Target = rusqlite::Connection>,
+        C: Deref<Target = Connection>,
         T: std::fmt::Debug,
     {
         let mut stmt = conn.prepare(query)?;
@@ -49,7 +49,7 @@ impl Storage {
     where
         P: rusqlite::Params,
         F: FnMut(&rusqlite::Row<'_>) -> rusqlite::Result<T>,
-        C: Deref<Target = rusqlite::Connection>,
+        C: Deref<Target = Connection>,
         T: std::fmt::Debug,
     {
         let mut stmt = conn.prepare(query)?;
@@ -62,7 +62,7 @@ impl Storage {
     where
         P: rusqlite::Params,
         F: FnMut(&rusqlite::Row<'_>) -> rusqlite::Result<Option<T>>,
-        C: Deref<Target = rusqlite::Connection>,
+        C: Deref<Target = Connection>,
         T: std::fmt::Debug,
     {
         let mut stmt = conn.prepare(query)?;
@@ -83,7 +83,7 @@ impl Storage {
     where
         P: rusqlite::Params,
         F: FnMut(&rusqlite::Row<'_>) -> rusqlite::Result<T>,
-        C: Deref<Target = rusqlite::Connection>,
+        C: Deref<Target = Connection>,
         T: std::fmt::Debug,
     {
         let mut stmt = conn.prepare(query)?;
@@ -98,7 +98,7 @@ impl Storage {
 
     pub fn table_list<C>(conn: &C) -> Result<()>
     where
-        C: Deref<Target = rusqlite::Connection>,
+        C: Deref<Target = Connection>,
     {
         Self::explore(conn, "pragma table_list", params![], |row| {
             let schema: String = row.get(0)?;

@@ -80,6 +80,8 @@ CREATE TABLE IF NOT EXISTS asset (
 
 -- event log
 CREATE TABLE IF NOT EXISTS event (
-  stamp timestamp NOT NULL,
-  data  text NOT NULL
+  data   text NOT NULL,
+  stamp  timestamp AS (json_extract(data, '$.stamp')),
+  squirrel_version text AS (json_extract(data, '$.squirrel_version')),
+  action text AS (json_extract(data, '$.action'))
 );

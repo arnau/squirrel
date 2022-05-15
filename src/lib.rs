@@ -1,4 +1,4 @@
-use entities::{storage::Connection, Result};
+use entities::{storage::PooledConnection, Result};
 use walkdir::DirEntry;
 use std::include_str;
 use lazy_static::lazy_static;
@@ -10,11 +10,18 @@ pub mod repositories;
 pub mod services;
 pub mod functions;
 
+// Version decomposes as:
+//
+// 1. Major
+// 2. Minor
+// 3. Patch
+pub const VERSION: [u16; 3] = [0, 1, 0];
+
 lazy_static! {
     static ref BOOTSTRAP: &'static str = include_str!("./storage/catalogue.sql");
 }
 
-pub fn bootstrap(conn: &Connection) -> Result<()> {
+pub fn bootstrap(conn: &PooledConnection) -> Result<()> {
     conn.execute_batch(&BOOTSTRAP)?;
     functions::add_parent_function(&conn)?;
 
