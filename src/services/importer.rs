@@ -1,8 +1,7 @@
 use crate::entities::import::{Import, ImportError};
 use crate::entities::Event;
 use crate::entities::{storage::Pool, Result};
-use crate::repositories::import::ImportRepository;
-use crate::repositories::EventRepository;
+use crate::repositories::{EventRepository, ImportRepository};
 use anyhow::anyhow as ah;
 use serde_json::json;
 
