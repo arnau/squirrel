@@ -1,6 +1,6 @@
 use crate::entities::import::{Import, ImportError};
-use crate::entities::Event;
-use crate::entities::{storage::Pool, Result};
+use crate::entities::storage::Pool;
+use crate::entities::{Event, Result};
 use crate::repositories::{EventRepository, ImportRepository};
 use anyhow::anyhow as ah;
 use serde_json::json;
@@ -45,14 +45,23 @@ pub fn import(pool: &Pool, path: &str) -> Result<()> {
 
     let broken_pyramids = ImportRepository::check_broken_pyramids(&tx, &previews_path)?;
 
-    for event in broken_pyramids {
+    for event in &broken_pyramids {
         EventRepository::insert(&tx, &event)?;
     }
+
+    let report = json!({
+        "root_count": ImportRepository::root_count(&tx)?,
+        "folder_count": ImportRepository::folder_count(&tx)?,
+        "file_count": ImportRepository::file_count(&tx)?,
+        "asset_count": ImportRepository::asset_count(&tx)?,
+        "broken_pyramid_count": broken_pyramids.len(),
+        "path": path
+    });
 
     tx.commit()?;
 
     ImportRepository::detach_catalogue(&conn)?;
-    EventRepository::insert(&conn, &Event::new("import:end", json!({ "path": path })))?;
+    EventRepository::insert(&conn, &Event::new("import:end", report))?;
 
     let events = EventRepository::head(&conn, 4)?;
 

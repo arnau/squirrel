@@ -2,9 +2,9 @@ use crate::entities::import::Import;
 use crate::entities::storage::{params, Connection, Storage};
 use crate::entities::{Event, Result};
 use crate::repositories::Repository;
+use serde_json::json;
 use std::ops::Deref;
 use std::path::Path;
-use serde_json::json;
 
 pub struct ImportRepository;
 
@@ -141,6 +141,26 @@ impl ImportRepository {
         Ok(())
     }
 
+    pub fn root_count<C>(conn: &C) -> Result<usize>
+    where
+        C: Deref<Target = Connection>,
+    {
+        let query = r#"
+            SELECT
+                count(1)
+            FROM
+                catalogue.AgLibraryRootFolder
+            WHERE
+                relativePathFromCatalog IS NOT NULL
+            "#;
+
+        Storage::get_one(conn, query, params![], |row| {
+            let value: usize = row.get(0)?;
+
+            Ok(value)
+        })
+    }
+
     pub fn copy_folders<C>(conn: &C) -> Result<()>
     where
         C: Deref<Target = Connection>,
@@ -186,6 +206,29 @@ impl ImportRepository {
         Ok(())
     }
 
+    pub fn folder_count<C>(conn: &C) -> Result<usize>
+    where
+        C: Deref<Target = Connection>,
+    {
+        let query = r#"
+            SELECT
+                count(folder.id_global)
+            FROM
+                catalogue.AgLibraryFolder AS folder
+                JOIN
+                    catalogue.AgLibraryRootFolder AS root_folder
+                    ON folder.rootFolder = root_folder.id_local
+            WHERE
+                root_folder.relativePathFromCatalog IS NOT NULL
+            "#;
+
+        Storage::get_one(conn, query, params![], |row| {
+            let value: usize = row.get(0)?;
+
+            Ok(value)
+        })
+    }
+
     pub fn copy_files<C>(conn: &C) -> Result<()>
     where
         C: Deref<Target = Connection>,
@@ -217,6 +260,32 @@ impl ImportRepository {
         stmt.execute(params![&id])?;
 
         Ok(())
+    }
+
+    pub fn file_count<C>(conn: &C) -> Result<usize>
+    where
+        C: Deref<Target = Connection>,
+    {
+        let query = r#"
+            SELECT
+                count(file.id_global)
+            FROM
+                catalogue.AgLibraryFile AS file
+                JOIN
+                    catalogue.AgLibraryFolder AS folder
+                    ON file.folder = folder.id_local
+                JOIN
+                    catalogue.AgLibraryRootFolder AS root_folder
+                    ON root_folder.id_local = folder.rootFolder
+            WHERE
+                root_folder.relativePathFromCatalog IS NOT NULL
+            "#;
+
+        Storage::get_one(conn, query, params![], |row| {
+            let value: usize = row.get(0)?;
+
+            Ok(value)
+        })
     }
 
     pub fn copy_assets<C>(conn: &C) -> Result<()>
@@ -286,10 +355,39 @@ impl ImportRepository {
         Ok(())
     }
 
-    pub fn check_broken_pyramids<C>(
-        conn: &C,
-        previews_path: &Path,
-    ) -> Result<Vec<Event>>
+    pub fn asset_count<C>(conn: &C) -> Result<usize>
+    where
+        C: Deref<Target = Connection>,
+    {
+        let query = r#"
+            SELECT
+                count(image.id_global)
+            FROM
+                catalogue.Adobe_images AS image
+            JOIN
+                catalogue.AgLibraryFile AS file
+                ON file.id_local = image.rootFile
+            JOIN
+                catalogue.AgLibraryFolder AS folder
+                ON file.folder = folder.id_local
+            JOIN
+                catalogue.AgLibraryRootFolder AS root_folder
+                ON folder.rootFolder = root_folder.id_local
+            JOIN
+                previews.ImageCacheEntry AS cache 
+                ON cache.imageId = image.id_local
+            WHERE
+                root_folder.relativePathFromCatalog IS NOT NULL
+            "#;
+
+        Storage::get_one(conn, query, params![], |row| {
+            let value: usize = row.get(0)?;
+
+            Ok(value)
+        })
+    }
+
+    pub fn check_broken_pyramids<C>(conn: &C, previews_path: &Path) -> Result<Vec<Event>>
     where
         C: Deref<Target = Connection>,
     {
