@@ -1,13 +1,19 @@
-use squirrel::{services::{importer, self}, entities::Storage};
+use squirrel::config;
+use squirrel::services;
 
 fn main() -> anyhow::Result<()> {
-    let pool = Storage::memory()?;
-    services::starter::setup(&pool.get()?)?;
+    let db = config::db_path();
 
-    // let cat2021 = "/Users/arnau/kitchen/squirrel/playground/catalogue/2021_JC_Candanedo-v11.lrcat";
+    if !db.exists() {
+        dbg!("mec");
+    }
+
+    let pool = services::starter::start(":memory:")?;
+
+    // // let cat2021 = "/Users/arnau/kitchen/squirrel/playground/catalogue/2021_JC_Candanedo-v11.lrcat";
     let cat2019 = "/Users/arnau/kitchen/squirrel/playground/catalogue/2019_JC_Candanedo-v11.lrcat";
 
-    importer::import(&pool, cat2019)?;
+    services::importer::import(&pool, cat2019)?;
 
     Ok(())
 }

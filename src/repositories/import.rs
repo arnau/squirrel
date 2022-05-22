@@ -116,6 +116,28 @@ impl ImportRepository {
         Ok(())
     }
 
+    pub fn check_source_exists<C>(conn: &C) -> Result<bool>
+    where
+        C: Deref<Target = Connection>,
+    {
+        let query = r#"
+            SELECT
+                count(id)
+            FROM
+                source
+            WHERE
+                id = ?
+            "#;
+
+        let id = Self::id(conn)?;
+
+        Storage::get_one(conn, query, params![&id], |row| {
+            let value: bool = row.get(0)?;
+
+            Ok(value)
+        })
+    }
+
     pub fn copy_roots<C>(conn: &C) -> Result<()>
     where
         C: Deref<Target = Connection>,

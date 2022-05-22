@@ -28,6 +28,11 @@ pub fn import(pool: &Pool, path: &str) -> Result<()> {
 
     ImportRepository::attach_catalogue(&tx, &source)?;
 
+    // TODO: Handle source updates. E.g. ratings updated.
+    if ImportRepository::check_source_exists(&tx)? {
+        return Err(ah!(ImportError::SourceExists));
+    }
+
     let version = ImportRepository::version(&tx)?;
 
     if !(version >= 11_00_00_0 && version < 12_00_00_0) {
@@ -62,10 +67,6 @@ pub fn import(pool: &Pool, path: &str) -> Result<()> {
 
     ImportRepository::detach_catalogue(&conn)?;
     EventRepository::insert(&conn, &Event::new("import:end", report))?;
-
-    let events = EventRepository::head(&conn, 4)?;
-
-    dbg!(events);
 
     Ok(())
 }

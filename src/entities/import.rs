@@ -113,4 +113,6 @@ pub enum ImportError {
     MissingFile(String),
     #[error("Unknown Lightroom version {0}")]
     UnknownVersion(usize),
+    #[error("Source already exists")]
+    SourceExists,
 }

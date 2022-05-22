@@ -1,4 +1,4 @@
-use crate::VERSION;
+use crate::{Version, VERSION};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -8,7 +8,7 @@ use thiserror::Error;
 /// Represents an event that happened in the system. For example an import action started.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Event {
-    pub squirrel_version: [u16; 3],
+    pub squirrel_version: Version,
     pub stamp: DateTime<Utc>,
     pub action: String,
     pub bag: serde_json::Value,
