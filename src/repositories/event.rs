@@ -37,7 +37,7 @@ impl EventRepository {
                 data
             FROM
                 event
-            ORDER BY stamp DESC
+            ORDER BY stamp ASC
             LIMIT ?
             "#;
 

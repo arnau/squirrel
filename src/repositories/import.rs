@@ -260,7 +260,7 @@ impl ImportRepository {
             (id, path, kind, parent_id, root_id, source_id)
             SELECT
                 file.id_global AS id,
-                '/' || root_folder.name || '/' || folder.pathFromRoot || file.originalFilename AS path,
+                '/' || root_folder.name || '/' || folder.pathFromRoot || file.idx_filename AS path,
                 'file' AS kind,
                 folder.id_global AS parent_id,
                 root_folder.id_global AS root_id,

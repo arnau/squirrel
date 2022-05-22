@@ -48,6 +48,11 @@ where
 
         CatalogueRepository::insert_version(conn, VERSION)?;
         CatalogueRepository::insert_pair(conn, "codename", "spip")?;
+
+        EventRepository::insert(
+            conn,
+            &Event::new("starter:create_catalogue", json!({ "version": VERSION })),
+        )?;
     }
 
     conn.pragma_update(None, "journal_mode", "wal")?;
