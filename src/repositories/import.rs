@@ -44,8 +44,22 @@ impl ImportRepository {
             '/' || root_folder.name || '/' || folder.pathFromRoot AS path,
             'folder' AS kind,
             (
-                CASE
-                    WHEN parent_path(folder.pathFromRoot) IS NOT NULL THEN
+                CASE parent_path('/' || root_folder.name || '/' || folder.pathFromRoot)
+                    WHEN NULL THEN
+                        NULL
+                    WHEN '/' || root_folder.name || '/' THEN
+                        (
+                            SELECT
+                                f.id_global
+                            FROM
+                                AgLibraryFolder AS f
+                            WHERE
+                                f.pathFromRoot = ''
+                            AND
+                                f.rootFolder = root_folder.id_local
+                            LIMIT 1
+                        )
+                    ELSE
                         (
                             SELECT
                                 f.id_global
@@ -55,8 +69,6 @@ impl ImportRepository {
                                 f.pathFromRoot = parent_path(folder.pathFromRoot)
                             LIMIT 1
                         )
-                    ELSE
-                        NULL
                 END
             ) AS parent_id,
             root_folder.id_global AS root_id
