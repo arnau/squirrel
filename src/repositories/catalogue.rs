@@ -1,10 +1,8 @@
 use crate::entities::storage::{params, Connection, Storage};
-use crate::entities::{Event, Result};
+use crate::entities::Result;
 use crate::repositories::Repository;
 use crate::Version;
-use serde_json::json;
 use std::ops::Deref;
-use std::path::Path;
 
 pub struct CatalogueRepository;
 

@@ -1,6 +1,9 @@
 use std::path::PathBuf;
+use std::fs;
 
 use directories::ProjectDirs;
+
+use crate::entities::Result;
 
 pub(crate) const QUALIFIER: &'static str = "net";
 pub(crate) const ORGANIZATION: &'static str = "seachess";
@@ -16,4 +19,10 @@ pub fn directories() -> ProjectDirs {
 
 pub fn db_path() -> PathBuf {
     directories().data_dir().join(DB_NAME)
+}
+
+pub fn create_data_dir() -> Result<()> {
+    fs::create_dir_all(directories().data_dir())?;
+
+    Ok(())
 }

@@ -1,8 +1,4 @@
-use std::path::PathBuf;
-use std::str::FromStr;
 use thiserror::Error;
-use crate::entities::Result;
-use anyhow::anyhow as ah;
 use crate::Version;
 
 /// Represents a Squirrel catalogue

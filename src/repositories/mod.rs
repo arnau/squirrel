@@ -1,7 +1,6 @@
 pub mod catalogue;
 pub mod event;
 pub mod import;
-pub mod source;
 
 pub trait Repository {}
 

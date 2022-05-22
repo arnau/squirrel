@@ -26,8 +26,111 @@ impl ImportRepository {
             previews = source.previews_path()?.display(),
             helper = source.helper_path()?.display()
         );
+        let views = r#"
+        CREATE TEMPORARY VIEW import_root AS
+        SELECT
+            id_global AS id,
+            name,
+            absolutePath AS path
+        FROM
+            catalogue.AgLibraryRootFolder
+        WHERE
+            relativePathFromCatalog IS NOT NULL;
+
+
+        CREATE TEMPORARY VIEW import_folder AS
+        SELECT
+            folder.id_global AS id,
+            '/' || root_folder.name || '/' || folder.pathFromRoot AS path,
+            'folder' AS kind,
+            (
+                CASE
+                    WHEN parent_path(folder.pathFromRoot) IS NOT NULL THEN
+                        (
+                            SELECT
+                                f.id_global
+                            FROM
+                                AgLibraryFolder AS f
+                            WHERE
+                                f.pathFromRoot = parent_path(folder.pathFromRoot)
+                            LIMIT 1
+                        )
+                    ELSE
+                        NULL
+                END
+            ) AS parent_id,
+            root_folder.id_global AS root_id
+        FROM
+            catalogue.AgLibraryFolder AS folder
+            JOIN
+                catalogue.AgLibraryRootFolder AS root_folder
+                ON folder.rootFolder = root_folder.id_local
+        WHERE
+            root_folder.relativePathFromCatalog IS NOT NULL;
+
+
+        CREATE TEMPORARY VIEW import_file AS
+        SELECT
+            file.id_global AS id,
+            '/' || root_folder.name || '/' || folder.pathFromRoot || file.idx_filename AS path,
+            'file' AS kind,
+            folder.id_global AS parent_id,
+            root_folder.id_global AS root_id
+        FROM
+            catalogue.AgLibraryFile AS file
+            JOIN
+                catalogue.AgLibraryFolder AS folder
+                ON file.folder = folder.id_local
+            JOIN
+                catalogue.AgLibraryRootFolder AS root_folder
+                ON root_folder.id_local = folder.rootFolder
+        WHERE
+            root_folder.relativePathFromCatalog IS NOT NULL;
+
+        CREATE TEMPORARY VIEW import_asset AS
+        SELECT
+            image.id_global AS id,
+            file.id_global AS entry_id,
+
+            COALESCE(image.rating, 0) AS rating,
+            image.pick AS flag,
+            image.colorLabels AS label,
+            image.fileFormat AS format,
+            image.fileWidth AS width,
+            image.fileHeight AS height,
+            image.orientation AS orientation,
+
+            cache.uuid AS pyramid_uuid,
+            cache.digest AS pyramid_digest,
+
+            strftime('%Y-%m-%dT%H:%M:%SZ', 
+                CASE
+                  WHEN file.modTime IS NULL THEN
+                    63113817600
+                  ELSE
+                    file.modTime + 978307200
+                END, 'unixepoch')
+            AS modification_stamp
+        FROM
+            catalogue.Adobe_images AS image
+        JOIN
+            catalogue.AgLibraryFile AS file
+            ON file.id_local = image.rootFile
+        JOIN
+            catalogue.AgLibraryFolder AS folder
+            ON file.folder = folder.id_local
+        JOIN
+            catalogue.AgLibraryRootFolder AS root_folder
+            ON folder.rootFolder = root_folder.id_local
+        JOIN
+            previews.ImageCacheEntry AS cache 
+            ON cache.imageId = image.id_local
+        WHERE
+            root_folder.relativePathFromCatalog IS NOT NULL;
+        "#;
 
         conn.execute_batch(&query)?;
+        conn.execute_batch(&views)?;
 
         Ok(())
     }
@@ -38,6 +141,11 @@ impl ImportRepository {
     {
         let query = format!(
             r#"
+        DROP VIEW import_root;
+        DROP VIEW import_folder;
+        DROP VIEW import_file;
+        DROP VIEW import_asset;
+
         DETACH DATABASE catalogue;
         DETACH DATABASE previews;
         DETACH DATABASE helper;
@@ -146,14 +254,10 @@ impl ImportRepository {
             INSERT INTO root
             (id, name, path, source_id)
             SELECT
-                id_global AS id,
-                name,
-                absolutePath AS path,
+                *,
                 ? AS source_id
             FROM
-                catalogue.AgLibraryRootFolder
-            WHERE
-                relativePathFromCatalog IS NOT NULL
+                import_root
             "#;
 
         let id = Self::id(conn)?;
@@ -171,9 +275,7 @@ impl ImportRepository {
             SELECT
                 count(1)
             FROM
-                catalogue.AgLibraryRootFolder
-            WHERE
-                relativePathFromCatalog IS NOT NULL
+                import_root
             "#;
 
         Storage::get_one(conn, query, params![], |row| {
@@ -191,34 +293,10 @@ impl ImportRepository {
             INSERT INTO entry
             (id, path, kind, parent_id, root_id, source_id)
             SELECT
-                folder.id_global AS id,
-                '/' || root_folder.name || '/' || folder.pathFromRoot AS path,
-                'folder' AS kind,
-                (
-                    CASE
-                        WHEN parent_path(folder.pathFromRoot) IS NOT NULL THEN
-                            (
-                                SELECT
-                                    f.id_global
-                                FROM
-                                    AgLibraryFolder AS f
-                                WHERE
-                                    f.pathFromRoot = parent_path(folder.pathFromRoot)
-                                LIMIT 1
-                            )
-                        ELSE
-                            NULL
-                    END
-                ) AS parent_id,
-                root_folder.id_global AS root_id,
+                *,
                 ? AS source_id
             FROM
-                catalogue.AgLibraryFolder AS folder
-                JOIN
-                    catalogue.AgLibraryRootFolder AS root_folder
-                    ON folder.rootFolder = root_folder.id_local
-            WHERE
-                root_folder.relativePathFromCatalog IS NOT NULL
+                import_folder
             "#;
 
         let id = Self::id(conn)?;
@@ -234,14 +312,9 @@ impl ImportRepository {
     {
         let query = r#"
             SELECT
-                count(folder.id_global)
+                count(id)
             FROM
-                catalogue.AgLibraryFolder AS folder
-                JOIN
-                    catalogue.AgLibraryRootFolder AS root_folder
-                    ON folder.rootFolder = root_folder.id_local
-            WHERE
-                root_folder.relativePathFromCatalog IS NOT NULL
+                import_folder
             "#;
 
         Storage::get_one(conn, query, params![], |row| {
@@ -259,22 +332,10 @@ impl ImportRepository {
             INSERT INTO entry
             (id, path, kind, parent_id, root_id, source_id)
             SELECT
-                file.id_global AS id,
-                '/' || root_folder.name || '/' || folder.pathFromRoot || file.idx_filename AS path,
-                'file' AS kind,
-                folder.id_global AS parent_id,
-                root_folder.id_global AS root_id,
+                *,
                 ? AS source_id
             FROM
-                catalogue.AgLibraryFile AS file
-                JOIN
-                    catalogue.AgLibraryFolder AS folder
-                    ON file.folder = folder.id_local
-                JOIN
-                    catalogue.AgLibraryRootFolder AS root_folder
-                    ON root_folder.id_local = folder.rootFolder
-            WHERE
-                root_folder.relativePathFromCatalog IS NOT NULL
+                import_file
             "#;
 
         let id = Self::id(conn)?;
@@ -290,17 +351,9 @@ impl ImportRepository {
     {
         let query = r#"
             SELECT
-                count(file.id_global)
+                count(id)
             FROM
-                catalogue.AgLibraryFile AS file
-                JOIN
-                    catalogue.AgLibraryFolder AS folder
-                    ON file.folder = folder.id_local
-                JOIN
-                    catalogue.AgLibraryRootFolder AS root_folder
-                    ON root_folder.id_local = folder.rootFolder
-            WHERE
-                root_folder.relativePathFromCatalog IS NOT NULL
+                import_file
             "#;
 
         Storage::get_one(conn, query, params![], |row| {
@@ -331,44 +384,9 @@ impl ImportRepository {
                 modification_time
             )
             SELECT
-                image.id_global AS id,
-                file.id_global AS entry_id,
-
-                COALESCE(image.rating, 0) AS rating,
-                image.pick AS flag,
-                image.colorLabels AS label,
-                image.fileFormat AS format,
-                image.fileWidth AS width,
-                image.fileHeight AS height,
-                image.orientation AS orientation,
-
-                cache.uuid AS pyramid_uuid,
-                cache.digest AS pyramid_digest,
-
-                strftime('%Y-%m-%dT%H:%M:%SZ', 
-                    CASE
-                      WHEN file.modTime IS NULL THEN
-                        63113817600
-                      ELSE
-                        file.modTime + 978307200
-                    END, 'unixepoch')
-                AS modification_stamp
+                *
             FROM
-                catalogue.Adobe_images AS image
-            JOIN
-                catalogue.AgLibraryFile AS file
-                ON file.id_local = image.rootFile
-            JOIN
-                catalogue.AgLibraryFolder AS folder
-                ON file.folder = folder.id_local
-            JOIN
-                catalogue.AgLibraryRootFolder AS root_folder
-                ON folder.rootFolder = root_folder.id_local
-            JOIN
-                previews.ImageCacheEntry AS cache 
-                ON cache.imageId = image.id_local
-            WHERE
-                root_folder.relativePathFromCatalog IS NOT NULL
+                import_asset
             "#;
 
         let mut stmt = conn.prepare(&query)?;
@@ -383,23 +401,9 @@ impl ImportRepository {
     {
         let query = r#"
             SELECT
-                count(image.id_global)
+                count(id)
             FROM
-                catalogue.Adobe_images AS image
-            JOIN
-                catalogue.AgLibraryFile AS file
-                ON file.id_local = image.rootFile
-            JOIN
-                catalogue.AgLibraryFolder AS folder
-                ON file.folder = folder.id_local
-            JOIN
-                catalogue.AgLibraryRootFolder AS root_folder
-                ON folder.rootFolder = root_folder.id_local
-            JOIN
-                previews.ImageCacheEntry AS cache 
-                ON cache.imageId = image.id_local
-            WHERE
-                root_folder.relativePathFromCatalog IS NOT NULL
+                import_asset
             "#;
 
         Storage::get_one(conn, query, params![], |row| {
