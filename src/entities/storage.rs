@@ -45,6 +45,22 @@ impl Storage {
         }
     }
 
+    pub fn get_one_maybe<C, T, P, F>(conn: &C, query: &str, p: P, f: F) -> Result<Option<T>>
+    where
+        P: Params,
+        F: FnMut(&rusqlite::Row<'_>) -> rusqlite::Result<T>,
+        C: Deref<Target = Connection>,
+        T: std::fmt::Debug,
+    {
+        let mut stmt = conn.prepare(query)?;
+        let mut rows = stmt.query(p)?.mapped(f);
+
+        match rows.next() {
+            Some(value) => Ok(Some(value?)),
+            None => Ok(None),
+        }
+    }
+
     pub fn get<C, T, P, F>(conn: &C, query: &str, params: P, f: F) -> Result<Vec<T>>
     where
         P: rusqlite::Params,

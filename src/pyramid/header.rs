@@ -72,7 +72,6 @@ where
     .message("while parsing array item")
 }
 
-// fn value<Input>() -> impl Parser<Input, Output = Value>
 fn value<Input>() -> FnOpaque<Input, Value>
 where
     Input: Stream<Token = char>,
@@ -147,7 +146,7 @@ pub struct Header {
 }
 
 /// Represents an image pyramid level combining the header metadata and the JPEG data.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub struct Level {
     pub height: u32,
     pub width: u32,

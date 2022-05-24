@@ -15,13 +15,19 @@ fn main() -> anyhow::Result<()> {
     let cat2019 = "/Users/arnau/kitchen/squirrel/playground/catalogue/2019_JC_Candanedo-v11.lrcat";
 
     services::importer::import(&pool, cat2019)?;
-    // services::importer::import(&pool, cat2021)?;
+    services::importer::import(&pool, cat2021)?;
 
-    let events = EventRepository::head(&pool.get()?, 4)?;
+    // let events = EventRepository::head(&pool.get()?, 4)?;
+    //
+    // for event in events {
+    //     dbg!(event);
+    // }
 
-    for event in events {
-        dbg!(event);
-    }
+    // let s = services::navigator::find_by_catalogue_path(&pool, "/2019/20181204_Coco_and_Eve/Export_hi_res/Coco_And_Eve31221-Edit.jpg")?;
+    // TODO: If no trailing path it should normalise. If not exists, error.
+    let s = services::navigator::get_path(&pool, "/2019/20181204_Coco_and_Eve/Export_hi_res/")?;
+
+    println!("{}", serde_json::to_string(&s)?);
 
     Ok(())
 }

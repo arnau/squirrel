@@ -1,13 +1,22 @@
+pub mod asset;
 pub mod catalogue;
+pub mod entry;
 pub mod event;
 pub mod import;
+pub mod location;
+pub mod pyramid;
 pub mod result;
 pub mod root;
 pub mod source;
+pub mod state;
+pub mod stem;
 pub mod storage;
 
+pub use entry::Entry;
 pub use event::Event;
+pub use pyramid::Pyramid;
 pub use result::Result;
 pub use root::Root;
 pub use source::Source;
+pub use state::State;
 pub use storage::{Storage, StorageError};

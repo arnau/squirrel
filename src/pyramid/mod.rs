@@ -7,7 +7,7 @@ pub mod parser;
 
 pub use header::Header;
 pub use parser::extract;
-pub use parser::Pyramid;
+pub use parser::PyramidObject;
 
 use crate::is_hidden;
 

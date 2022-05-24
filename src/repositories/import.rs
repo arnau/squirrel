@@ -1,10 +1,16 @@
 use crate::entities::import::Import;
 use crate::entities::storage::{params, Connection, Storage};
-use crate::entities::{Event, Result};
+use crate::entities::{Event, Pyramid, Result};
 use crate::repositories::Repository;
 use serde_json::json;
+use std::include_str;
 use std::ops::Deref;
 use std::path::Path;
+use lazy_static::lazy_static;
+
+lazy_static! {
+    static ref VIEWS_BOOTSTRAP: &'static str = include_str!("../storage/import.sql");
+}
 
 pub struct ImportRepository;
 
@@ -26,123 +32,9 @@ impl ImportRepository {
             previews = source.previews_path()?.display(),
             helper = source.helper_path()?.display()
         );
-        let views = r#"
-        CREATE TEMPORARY VIEW import_root AS
-        SELECT
-            id_global AS id,
-            name,
-            absolutePath AS path
-        FROM
-            catalogue.AgLibraryRootFolder
-        WHERE
-            relativePathFromCatalog IS NOT NULL;
-
-
-        CREATE TEMPORARY VIEW import_folder AS
-        SELECT
-            folder.id_global AS id,
-            '/' || root_folder.name || '/' || folder.pathFromRoot AS path,
-            'folder' AS kind,
-            (
-                CASE parent_path('/' || root_folder.name || '/' || folder.pathFromRoot)
-                    WHEN NULL THEN
-                        NULL
-                    WHEN '/' || root_folder.name || '/' THEN
-                        (
-                            SELECT
-                                f.id_global
-                            FROM
-                                AgLibraryFolder AS f
-                            WHERE
-                                f.pathFromRoot = ''
-                            AND
-                                f.rootFolder = root_folder.id_local
-                            LIMIT 1
-                        )
-                    ELSE
-                        (
-                            SELECT
-                                f.id_global
-                            FROM
-                                AgLibraryFolder AS f
-                            WHERE
-                                f.pathFromRoot = parent_path(folder.pathFromRoot)
-                            LIMIT 1
-                        )
-                END
-            ) AS parent_id,
-            root_folder.id_global AS root_id
-        FROM
-            catalogue.AgLibraryFolder AS folder
-            JOIN
-                catalogue.AgLibraryRootFolder AS root_folder
-                ON folder.rootFolder = root_folder.id_local
-        WHERE
-            root_folder.relativePathFromCatalog IS NOT NULL;
-
-
-        CREATE TEMPORARY VIEW import_file AS
-        SELECT
-            file.id_global AS id,
-            '/' || root_folder.name || '/' || folder.pathFromRoot || file.idx_filename AS path,
-            'file' AS kind,
-            folder.id_global AS parent_id,
-            root_folder.id_global AS root_id
-        FROM
-            catalogue.AgLibraryFile AS file
-            JOIN
-                catalogue.AgLibraryFolder AS folder
-                ON file.folder = folder.id_local
-            JOIN
-                catalogue.AgLibraryRootFolder AS root_folder
-                ON root_folder.id_local = folder.rootFolder
-        WHERE
-            root_folder.relativePathFromCatalog IS NOT NULL;
-
-        CREATE TEMPORARY VIEW import_asset AS
-        SELECT
-            image.id_global AS id,
-            file.id_global AS entry_id,
-
-            COALESCE(image.rating, 0) AS rating,
-            image.pick AS flag,
-            image.colorLabels AS label,
-            image.fileFormat AS format,
-            image.fileWidth AS width,
-            image.fileHeight AS height,
-            image.orientation AS orientation,
-
-            cache.uuid AS pyramid_uuid,
-            cache.digest AS pyramid_digest,
-
-            strftime('%Y-%m-%dT%H:%M:%SZ', 
-                CASE
-                  WHEN file.modTime IS NULL THEN
-                    63113817600
-                  ELSE
-                    file.modTime + 978307200
-                END, 'unixepoch')
-            AS modification_stamp
-        FROM
-            catalogue.Adobe_images AS image
-        JOIN
-            catalogue.AgLibraryFile AS file
-            ON file.id_local = image.rootFile
-        JOIN
-            catalogue.AgLibraryFolder AS folder
-            ON file.folder = folder.id_local
-        JOIN
-            catalogue.AgLibraryRootFolder AS root_folder
-            ON folder.rootFolder = root_folder.id_local
-        JOIN
-            previews.ImageCacheEntry AS cache 
-            ON cache.imageId = image.id_local
-        WHERE
-            root_folder.relativePathFromCatalog IS NOT NULL;
-        "#;
 
         conn.execute_batch(&query)?;
-        conn.execute_batch(&views)?;
+        conn.execute_batch(&VIEWS_BOOTSTRAP)?;
 
         Ok(())
     }
@@ -438,7 +330,7 @@ impl ImportRepository {
             asset.pyramid_filename
         FROM
             asset
-        JOIN
+        INNER JOIN
             entry
             ON entry.id = asset.entry_id
         "#,
@@ -447,11 +339,8 @@ impl ImportRepository {
                 let entry_id: String = row.get(0)?;
                 let path: String = row.get(1)?;
                 let pyramid_filename: String = row.get(2)?;
-
-                let nibble = pyramid_filename.get(0..1).unwrap();
-                let two_bytes = pyramid_filename.get(0..4).unwrap();
-                let pyramid_path = format!("{}/{}/{}", nibble, two_bytes, pyramid_filename);
-                let pyramid_fullpath = previews_path.join(&pyramid_path);
+                let pyramid_fullpath =
+                    Pyramid::new(previews_path.to_path_buf(), &pyramid_filename).absolute_path();
 
                 if pyramid_fullpath.exists() {
                     Ok(None)

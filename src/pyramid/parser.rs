@@ -50,19 +50,33 @@ use byteorder::{BigEndian, ReadBytesExt};
 use std::collections::HashMap;
 use std::io::prelude::*;
 
-use super::header::{self, Header};
+use super::header::{self, Header, Level};
 
 /// Represents an image pyramid.
 #[derive(Debug, Clone)]
-pub struct Pyramid {
+pub struct PyramidObject {
     pub header: Option<Header>,
     pub blobs: HashMap<String, Vec<u8>>,
+}
+
+impl PyramidObject {
+    pub fn len(&self) -> usize {
+        self.blobs.len()
+    }
+
+    pub fn levels(&self) -> Vec<Level> {
+        self.header.clone().expect("pyramid header to exist").levels
+    }
+
+    pub fn level(&self, number: usize) -> Level {
+        self.header.clone().expect("pyramid header to exist").levels[number - 1]
+    }
 }
 
 /// Any valid ".lrprev" file starts with "AgHg".
 pub static MAGIC_LRPREV: &[u8; 4] = b"AgHg";
 
-pub fn extract<R>(mut reader: R) -> anyhow::Result<Pyramid>
+pub fn extract<R>(mut reader: R) -> anyhow::Result<PyramidObject>
 where
     R: Read,
 {
@@ -120,7 +134,7 @@ where
         }
     }
 
-    let pyramid = Pyramid { header, blobs };
+    let pyramid = PyramidObject { header, blobs };
 
     Ok(pyramid)
 }

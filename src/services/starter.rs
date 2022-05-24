@@ -12,6 +12,7 @@ use std::ops::Deref;
 
 lazy_static! {
     static ref BOOTSTRAP: &'static str = include_str!("../storage/catalogue.sql");
+    static ref ANALYTICS_BOOT: &'static str = include_str!("../storage/analytics.sql");
 }
 
 pub fn start(address: &str) -> Result<Pool> {
@@ -44,6 +45,7 @@ where
         add_parent_function(&conn)?;
     } else {
         conn.execute_batch(&BOOTSTRAP)?;
+        conn.execute_batch(&ANALYTICS_BOOT)?;
         add_parent_function(&conn)?;
 
         CatalogueRepository::insert_version(conn, VERSION)?;
