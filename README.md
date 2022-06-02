@@ -6,6 +6,12 @@ A meta catalogue for Lightroom catalogues.
 
 **Squirrel** is a [Tauri] application with a [React] frontend and a [Sqlite] database. The business logic is contained in the [nut](./crates/nut/) library.
 
+## Development
+
+```sh
+npm run tauri dev
+```
+
 ## Licence
 
 This is private code and is not intended to be reused.
