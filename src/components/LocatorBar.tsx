@@ -8,7 +8,7 @@ function submit(location: string): Promise<State> {
   return invoke("locate", { location })
 }
 
-interface LocatorBarProps {
+export type LocatorBarProps = {
   location: string;
   onChange: (event: ChangeEvent<HTMLInputElement>) => void;
 }

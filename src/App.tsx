@@ -1,24 +1,40 @@
-import React, { useState, ChangeEvent } from 'react'
+import React, { useState, ChangeEvent, Dispatch, SetStateAction } from 'react'
 import './App.css'
 import { invoke } from '@tauri-apps/api/tauri'
 import { createImage, revokeImage } from './aux/image'
-import { Box, color, Flex, Text } from "@chakra-ui/react"
-import { Input, InputGroup, InputLeftAddon, Button } from "@chakra-ui/react"
 import { Grid, GridItem } from "@chakra-ui/react"
 
-import LocatorBar from "./components/LocatorBar"
+import { MaximiseButton, MinimiseButton } from "./components/ExpandToggle"
+import LocatorBar, { LocatorBarProps } from "./components/LocatorBar"
 
 
 function App() {
+  const [expansion, setExpansion] = useState<boolean>(false)
   const [blob, setBlob] = useState<string | null>(null)
   const [location, setLocation] = useState('')
   const handleLocationChange =
     (event: ChangeEvent<HTMLInputElement>) => setLocation(event.target.value)
 
   return (
+    expansion
+      ? <CatalogueFocusLayout setExpansion={setExpansion} />
+      : <CatalogueLayout setExpansion={setExpansion} locatorbar={{
+        location,
+        onChange: handleLocationChange,
+      }} />
+  )
+}
+
+type CatalogueLayoutProps = {
+  locatorbar: LocatorBarProps;
+  setExpansion: Dispatch<SetStateAction<boolean>>;
+}
+
+function CatalogueLayout({ setExpansion, locatorbar }: CatalogueLayoutProps) {
+  return (
     <Grid
       gap={1}
-      templateRows="50px repeat(4, 1fr)"
+      templateRows="50px repeat(5, 1fr)"
       templateColumns="repeat(6, 1fr)"
       height="100vh"
       bg="gray.800"
@@ -27,22 +43,52 @@ function App() {
       <GridItem
         colSpan={6}
         rowSpan={1}
-        bg="red.700"
+        bg="grey.700"
         padding="8px 16px"
       >
         <LocatorBar
-          location={location}
-          onChange={handleLocationChange} />
+          location={locatorbar.location}
+          onChange={locatorbar.onChange} />
       </GridItem>
-      <GridItem colSpan={1} rowSpan={3} bg="neutral" />
+      <GridItem colSpan={1} rowSpan={5} bg="neutral" />
       <GridItem
-        colSpan={4}
-        rowSpan={3}
+        colSpan={2}
+        rowSpan={5}
         bg="neutral"
       >
       </GridItem>
-      <GridItem colSpan={1} rowSpan={3} bg="neutral" />
-      <GridItem colSpan={6} rowSpan={1} bg="neutral" />
+      <GridItem colSpan={3} rowSpan={4} bg="neutral" position="relative">
+        <MaximiseButton setExpansion={setExpansion} />
+      </GridItem>
+      <GridItem colSpan={3} rowSpan={1} bg="neutral">
+      </GridItem>
+    </Grid>
+  )
+}
+
+type CatalogueFocusLayoutProps = {
+  setExpansion: Dispatch<SetStateAction<boolean>>;
+}
+
+function CatalogueFocusLayout({ setExpansion }: CatalogueFocusLayoutProps) {
+  return (
+    <Grid
+      gap={1}
+      templateRows="repeat(6, 1fr)"
+      templateColumns="repeat(24, 1fr)"
+      height="100vh"
+      bg="gray.800"
+      minWidth={900}
+    >
+      <GridItem colSpan={1} rowSpan={6} bg="neutral">
+      </GridItem>
+      <GridItem colSpan={22} rowSpan={5} bg="neutral" position="relative">
+        <MinimiseButton setExpansion={setExpansion} />
+      </GridItem>
+      <GridItem colSpan={1} rowSpan={6} bg="neutral">
+      </GridItem>
+      <GridItem colSpan={22} rowSpan={1} bg="neutral">
+      </GridItem>
     </Grid>
   )
 }
