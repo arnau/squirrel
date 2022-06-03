@@ -69,7 +69,7 @@ export function MaximiseIcon({ style }: any) {
         viewBox="0 0 21 21"
         width="21"
       >
-        <g fill="none" fill-rule="evenodd" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" transform="translate(2 2)">
+        <g fill="none" fillRule="evenodd" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" transform="translate(2 2)">
           <path d="m16.5 5.5v-4.978l-5.5.014" />
           <path d="m16.5.522-6 5.907" />
           <path d="m11 16.521 5.5.002-.013-5.5" />
@@ -103,7 +103,7 @@ export function MinimiseIcon({ style }: any) {
         viewBox="0 0 21 21"
         width="21"
       >
-        <g fill="none" fill-rule="evenodd" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" transform="translate(3 3)">
+        <g fill="none" fillRule="evenodd" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" transform="translate(3 3)">
           <path d="m5.5 14.5v-5h-5" />
           <path d="m14.5 9.5h-5v5" />
           <path d="m.5 5.5h5v-5" />
