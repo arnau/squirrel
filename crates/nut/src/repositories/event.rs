@@ -20,7 +20,7 @@ impl EventRepository {
                 (?)
             "#;
 
-        let mut stmt = conn.prepare(&query)?;
+        let mut stmt = conn.prepare(query)?;
         let value = event.to_string();
         stmt.execute(params![&value])?;
 
@@ -41,7 +41,7 @@ impl EventRepository {
             LIMIT ?
             "#;
 
-        let events = Storage::get(conn, &query, params![&amount], |row| {
+        let events = Storage::get(conn, query, params![&amount], |row| {
             let blob: String = row.get(0)?;
             let event: Event = Event::from_str(&blob).expect("event to be parseable");
 

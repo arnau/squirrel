@@ -1,6 +1,3 @@
-use lazy_static::lazy_static;
-use walkdir::DirEntry;
-
 pub mod config;
 pub mod entities;
 pub mod functions;
@@ -17,15 +14,4 @@ pub type Version = [u16; 3];
 // 3. Patch
 pub const VERSION: Version = [0, 1, 0];
 
-lazy_static! {
-    static ref BOOTSTRAP: &'static str = include_str!("./storage/catalogue.sql");
-}
-
-// TODO: Re-organise
-fn is_hidden(entry: &DirEntry) -> bool {
-    entry
-        .file_name()
-        .to_str()
-        .map(|s| s.starts_with("."))
-        .unwrap_or(false)
-}
+pub use entities::{Result, Storage, State, Location};

@@ -5,10 +5,10 @@ use directories::ProjectDirs;
 
 use crate::entities::Result;
 
-pub(crate) const QUALIFIER: &'static str = "net";
-pub(crate) const ORGANIZATION: &'static str = "seachess";
-pub(crate) const APPLICATION: &'static str = "squirrel";
-pub(crate) const DB_NAME: &'static str = "squirrel.db";
+pub(crate) const QUALIFIER: &str = "net";
+pub(crate) const ORGANIZATION: &str = "seachess";
+pub(crate) const APPLICATION: &str = "squirrel";
+pub(crate) const DB_NAME: &str = "squirrel.db";
 
 /// Linux:   /home/alice/.config/squirrel
 /// Windows: C:\Users\Alice\AppData\Roaming\seachess\squirrel

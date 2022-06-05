@@ -31,7 +31,7 @@ where
     Input::Error: ParseError<Input::Token, Input::Range, Input::Position>,
 {
     many1(satisfy(|c| c != '\n' && c != ',' && c != '"'))
-        .map(|v| Value::Scalar(v))
+        .map(Value::Scalar)
         .message("while parsing raw value")
 }
 
@@ -54,7 +54,7 @@ where
         token('}').skip(spaces()),
         many(array_item().skip(spaces())),
     )
-    .map(|v| Value::Array(v))
+    .map(Value::Array)
     .message("while parsing array")
 }
 
@@ -164,7 +164,7 @@ pub fn decode(input: &str) -> anyhow::Result<Header> {
 
     let levels = if let Value::Array(inner) = output.get("levels").expect("levels") {
         inner
-            .into_iter()
+            .iter()
             .map(|h| {
                 Ok(Level {
                     height: h.get("height").expect("height").to_string().parse()?,

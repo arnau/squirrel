@@ -6,19 +6,51 @@ use crate::entities::stem::{Stem, StemRow};
 use crate::entities::storage::{Connection, Pool};
 use crate::entities::{Event, Result, State};
 use crate::repositories::{AssetRepository, EventRepository, StateRepository, StemRepository};
+use anyhow::anyhow as ah;
 use serde_json::json;
 use std::ops::Deref;
 
-/// Attempts to find the state for the given catalogue path.
+/// Attempts to find the state for the given path.
+///
+/// Paths are expected to have a scope and a path:
+///
+/// - `cat:/2021/20210504_bla/bla_bla.jpg`
+/// - `config:`
+/// - `analytics:`
 pub fn get_path(pool: &Pool, path: &str) -> Result<State> {
     let mut conn = pool.get()?;
-    let tx = conn.transaction()?;
 
-    let location = get_location(&tx, path)?;
-    let state_repo = StateRepository(&tx);
+    if path.starts_with('/') {
+        let tx = conn.transaction()?;
+        let state = get_catalogue_path(&tx, path)?;
+
+        tx.commit()?;
+
+        EventRepository::insert(
+            &conn,
+            &Event::new(
+                "navigate",
+                json!({
+                    "path": path,
+                }),
+            ),
+        )?;
+
+        Ok(state)
+    } else {
+        Err(ah!("malformed path"))
+    }
+}
+
+fn get_catalogue_path<C>(conn: &C, path: &str) -> Result<State>
+where
+    C: Deref<Target = Connection>,
+{
+    let location = get_location(conn, path)?;
+    let state_repo = StateRepository(conn);
 
     let roots = state_repo.get_roots()?;
-    let (folders, files) = get_descendants(&tx, location.ancestor())?;
+    let (folders, files) = get_descendants(conn, location.ancestor())?;
 
     let state = State::Catalogue {
         location,
@@ -26,19 +58,6 @@ pub fn get_path(pool: &Pool, path: &str) -> Result<State> {
         folders,
         files,
     };
-
-    tx.commit()?;
-
-    EventRepository::insert(
-        &conn,
-        &Event::new(
-            "navigate",
-            json!({
-                "path": path,
-            }),
-        ),
-    )?;
-
     Ok(state)
 }
 

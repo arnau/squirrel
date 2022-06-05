@@ -70,7 +70,7 @@ impl CatalogueRepository {
                 (?, ?)
             "#;
 
-        let mut stmt = conn.prepare(&query)?;
+        let mut stmt = conn.prepare(query)?;
         stmt.execute(params![key, value,])?;
 
         Ok(())

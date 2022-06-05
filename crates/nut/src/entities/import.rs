@@ -16,9 +16,9 @@ impl Import {
         let path = PathBuf::from_str(spath)?;
         let name = path
             .file_stem()
-            .ok_or(ah!(ImportError::NotAFile(spath.to_string())))?
+            .ok_or_else(|| ah!(ImportError::NotAFile(spath.to_string())))?
             .to_str()
-            .ok_or(ah!(ImportError::InvalidOsPath))?
+            .ok_or_else(|| ah!(ImportError::InvalidOsPath))?
             .to_string();
 
         if let Some(extension) = path.extension() {

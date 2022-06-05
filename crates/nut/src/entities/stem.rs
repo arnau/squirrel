@@ -20,8 +20,8 @@ pub enum Stem {
 impl Stem {
     pub fn id(&self) -> &str {
         match self {
-            Stem::File { id, .. } => &id,
-            Stem::Folder { id, .. } => &id,
+            Stem::File { id, .. } => id,
+            Stem::Folder { id, .. } => id,
         }
     }
 }

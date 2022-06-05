@@ -20,29 +20,29 @@
 //!
 //! ```lua
 //! pyramid = {
-//! 	colorProfile = "AdobeRGB",
-//! 	croppedHeight = 4912,
-//! 	croppedWidth = 7360,
-//! 	digest = "030b36e11e9d722fdab20884884e0ff2",
-//! 	fileTimeStamp = 645111123,
-//! 	formatVersion = 3,
-//! 	fromProxy = false,
-//! 	levels = {
-//! 		{
-//! 			height = 61,
-//! 			width = 90,
-//! 		},
-//! 		{
-//! 			height = 121,
-//! 			width = 180,
-//! 		},
-//! 		{
-//! 			height = 241,
-//! 			width = 360,
-//! 		},
-//! 	},
-//! 	quality = "standard",
-//! 	uuid = "FF4ADF67-3C63-4EB7-85B1-6D4409B537D3",
+//!     colorProfile = "AdobeRGB",
+//!     croppedHeight = 4912,
+//!     croppedWidth = 7360,
+//!     digest = "030b36e11e9d722fdab20884884e0ff2",
+//!     fileTimeStamp = 645111123,
+//!     formatVersion = 3,
+//!     fromProxy = false,
+//!     levels = {
+//!         {
+//!             height = 61,
+//!             width = 90,
+//!         },
+//!         {
+//!             height = 121,
+//!             width = 180,
+//!         },
+//!         {
+//!             height = 241,
+//!             width = 360,
+//!         },
+//!     },
+//!     quality = "standard",
+//!     uuid = "FF4ADF67-3C63-4EB7-85B1-6D4409B537D3",
 //! }
 //! ```
 
@@ -64,6 +64,10 @@ impl PyramidObject {
         self.blobs.len()
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.blobs.is_empty()
+    }
+
     pub fn levels(&self) -> Vec<Level> {
         self.header.clone().expect("pyramid header to exist").levels
     }
@@ -76,6 +80,8 @@ impl PyramidObject {
 /// Any valid ".lrprev" file starts with "AgHg".
 pub static MAGIC_LRPREV: &[u8; 4] = b"AgHg";
 
+// TODO: Fix the unused io amount.
+#[allow(clippy::unused_io_amount)]
 pub fn extract<R>(mut reader: R) -> anyhow::Result<PyramidObject>
 where
     R: Read,

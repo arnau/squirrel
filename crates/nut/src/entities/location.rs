@@ -27,13 +27,18 @@ impl Location {
                     match len {
                         // Files cannot exist alone.
                         0..=1 => unreachable!(),
-                        // Catching the unseen case of a file directly under root.
-                        2 => self.0.get(0),
                         // Most files are under a folder or subfolder.
-                        _ => self.0.get(len - 3),
+                        _ => self.0.get(len - 2),
                     }
                 }
-                Stem::Folder { .. } => self.0.get(len - 2),
+                Stem::Folder { .. } => {
+                    match len {
+                        0 => None,
+                        // A root folder.
+                        1 => self.0.get(0),
+                        _ => self.0.get(len - 1),
+                    }
+                }
             }
         } else {
             None

@@ -14,9 +14,11 @@ pub mod storage;
 
 pub use entry::Entry;
 pub use event::Event;
+pub use location::Location;
 pub use pyramid::Pyramid;
 pub use result::Result;
 pub use root::Root;
 pub use source::Source;
 pub use state::State;
+pub use stem::Stem;
 pub use storage::{Storage, StorageError};

@@ -18,6 +18,7 @@ use serde_json::json;
 ///     previews.db
 ///     root-pixels.db
 /// ```
+#[allow(clippy::inconsistent_digit_grouping)]
 pub fn import(pool: &Pool, path: &str) -> Result<()> {
     let mut conn = pool.get()?;
 
@@ -35,7 +36,7 @@ pub fn import(pool: &Pool, path: &str) -> Result<()> {
 
     let version = ImportRepository::version(&tx)?;
 
-    if !(version >= 11_00_00_0 && version < 12_00_00_0) {
+    if !(11_00_00_0..12_00_00_0).contains(&version) {
         return Err(ah!(ImportError::UnknownVersion(version)));
     }
 
@@ -51,7 +52,7 @@ pub fn import(pool: &Pool, path: &str) -> Result<()> {
     let broken_pyramids = ImportRepository::check_broken_pyramids(&tx, &previews_path)?;
 
     for event in &broken_pyramids {
-        EventRepository::insert(&tx, &event)?;
+        EventRepository::insert(&tx, event)?;
     }
 
     let report = json!({

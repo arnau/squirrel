@@ -42,11 +42,11 @@ where
             return Err(ah!(CatalogueError::IncompatibleVersion(version_pack)));
         }
 
-        add_parent_function(&conn)?;
+        add_parent_function(conn)?;
     } else {
         conn.execute_batch(&BOOTSTRAP)?;
         conn.execute_batch(&ANALYTICS_BOOT)?;
-        add_parent_function(&conn)?;
+        add_parent_function(conn)?;
 
         CatalogueRepository::insert_version(conn, VERSION)?;
         CatalogueRepository::insert_pair(conn, "codename", "spip")?;

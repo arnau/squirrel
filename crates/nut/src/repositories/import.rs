@@ -2,11 +2,11 @@ use crate::entities::import::Import;
 use crate::entities::storage::{params, Connection, Storage};
 use crate::entities::{Event, Pyramid, Result};
 use crate::repositories::Repository;
+use lazy_static::lazy_static;
 use serde_json::json;
 use std::include_str;
 use std::ops::Deref;
 use std::path::Path;
-use lazy_static::lazy_static;
 
 lazy_static! {
     static ref VIEWS_BOOTSTRAP: &'static str = include_str!("../storage/import.sql");
@@ -43,8 +43,7 @@ impl ImportRepository {
     where
         C: Deref<Target = Connection>,
     {
-        let query = format!(
-            r#"
+        let query = r#"
         DROP VIEW import_root;
         DROP VIEW import_folder;
         DROP VIEW import_file;
@@ -54,10 +53,9 @@ impl ImportRepository {
         DETACH DATABASE previews;
         DETACH DATABASE helper;
         PRAGMA foreign_keys = ON;
-        "#,
-        );
+        "#;
 
-        conn.execute_batch(&query)?;
+        conn.execute_batch(query)?;
 
         Ok(())
     }
@@ -117,7 +115,7 @@ impl ImportRepository {
 
         let id = Self::id(conn)?;
         let version = Self::version(conn)?;
-        let mut stmt = conn.prepare(&query)?;
+        let mut stmt = conn.prepare(query)?;
         stmt.execute(params![
             &id,
             &source.name,
@@ -165,7 +163,7 @@ impl ImportRepository {
             "#;
 
         let id = Self::id(conn)?;
-        let mut stmt = conn.prepare(&query)?;
+        let mut stmt = conn.prepare(query)?;
         stmt.execute(params![&id])?;
 
         Ok(())
@@ -204,7 +202,7 @@ impl ImportRepository {
             "#;
 
         let id = Self::id(conn)?;
-        let mut stmt = conn.prepare(&query)?;
+        let mut stmt = conn.prepare(query)?;
         stmt.execute(params![&id])?;
 
         Ok(())
@@ -243,7 +241,7 @@ impl ImportRepository {
             "#;
 
         let id = Self::id(conn)?;
-        let mut stmt = conn.prepare(&query)?;
+        let mut stmt = conn.prepare(query)?;
         stmt.execute(params![&id])?;
 
         Ok(())
@@ -293,7 +291,7 @@ impl ImportRepository {
                 import_asset
             "#;
 
-        let mut stmt = conn.prepare(&query)?;
+        let mut stmt = conn.prepare(query)?;
         stmt.execute(params![])?;
 
         Ok(())

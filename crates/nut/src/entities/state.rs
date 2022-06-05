@@ -1,4 +1,3 @@
-use super::asset::Thumbnail;
 use super::location::Location;
 use serde::{Deserialize, Serialize};
 

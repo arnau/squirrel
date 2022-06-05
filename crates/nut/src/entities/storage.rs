@@ -86,7 +86,7 @@ impl Storage {
         let mut result = Vec::new();
 
         while let Some(row) = rows.next()? {
-            if let Some(value) = f(&row)? {
+            if let Some(value) = f(row)? {
                 result.push(value);
             }
         }

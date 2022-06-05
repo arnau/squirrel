@@ -1,6 +1,6 @@
-use squirrel::config;
-use squirrel::repositories::EventRepository;
-use squirrel::services;
+use nut::config;
+use nut::repositories::EventRepository;
+use nut::services;
 
 fn main() -> anyhow::Result<()> {
     // let db = config::db_path();
@@ -25,7 +25,8 @@ fn main() -> anyhow::Result<()> {
 
     // let s = services::navigator::find_by_catalogue_path(&pool, "/2019/20181204_Coco_and_Eve/Export_hi_res/Coco_And_Eve31221-Edit.jpg")?;
     // TODO: If no trailing path it should normalise. If not exists, error.
-    let s = services::navigator::get_path(&pool, "/2019/20181204_Coco_and_Eve/Export_hi_res/")?;
+    // let s = services::navigator::get_path(&pool, "/2019/20181204_Coco_and_Eve/Export_hi_res/")?;
+    let s = services::navigator::get_path(&pool, "/")?;
 
     println!("{}", serde_json::to_string(&s)?);
 
