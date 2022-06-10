@@ -6,15 +6,17 @@ import './index.css'
 import theme from './theme'
 
 document.addEventListener('DOMContentLoaded', async () => {
-  // read user preferences via Tauri command.
+  // TODO: read user preferences via Tauri command.
   console.log("loading complete")
+
+  ReactDOM.createRoot(document.getElementById('root')!).render(
+    <React.StrictMode>
+      <ChakraProvider theme={theme}>
+        <CSSReset />
+        <App />
+      </ChakraProvider>
+    </React.StrictMode>
+  )
 })
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <ChakraProvider theme={theme}>
-      <CSSReset />
-      <App />
-    </ChakraProvider>
-  </React.StrictMode>
-)
+

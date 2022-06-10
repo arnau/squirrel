@@ -24,6 +24,13 @@ impl Stem {
             Stem::Folder { id, .. } => id,
         }
     }
+
+    pub fn path(&self) -> &str {
+        match self {
+            Stem::File { path, .. } => path,
+            Stem::Folder { path, .. } => path,
+        }
+    }
 }
 
 impl fmt::Display for Stem {

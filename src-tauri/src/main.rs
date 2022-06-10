@@ -3,115 +3,39 @@
     windows_subsystem = "windows"
 )]
 
-use std::fs;
-use std::io::prelude::*;
-use std::str::FromStr;
+use nut::entities::storage::{params, Pool, Storage};
+use nut::services;
+// use std::fs;
+// use std::io::prelude::*;
+// use std::str::FromStr;
+// use std::{collections::HashMap, sync::Mutex};
 use tauri::Manager;
+// use tauri::State;
 use tauri::{CustomMenuItem, Menu, MenuEntry, MenuItem, Submenu};
 
-mod ui {
-    use std::str::FromStr;
-
-    use serde::{Deserialize, Serialize};
-
-    #[derive(Serialize, Deserialize)]
-    pub struct Thumbnail(String);
-
-    #[derive(Serialize, Deserialize)]
-    pub struct Image(String);
-
-    #[derive(Serialize, Deserialize)]
-    pub struct File {
-        pub path: String,
-        // The catalogue where the file was sourced from. Should be a Source with relevant
-        // information.
-        // pub source: String,
-        // or extension
-        // pub file_type: String,
-    }
-
-    #[derive(Serialize, Deserialize)]
-    pub struct Folder {
-        pub path: String,
-        // pub source: String,
-    }
-
-    // Location should capture the metadata for the current entity.
-    //
-    // For files:
-    //
-    // - id (the absolute route)
-    // - file_type
-    // - classification (star, colour)
-    // - bb download. Actually, this is not needed because the action will happen in the
-    // backend.
-    // - modification time
-    //
-    // For folders:
-    //
-    // - id (the absolute route)
-    // - modification time?
-    #[derive(Serialize, Deserialize)]
-    #[serde(tag = "kind")]
-    pub enum Location {
-        File(File),
-        Folder(Folder),
-    }
-
-    impl FromStr for Location {
-        type Err = String;
-
-        fn from_str(s: &str) -> Result<Self, Self::Err> {
-            if s.find('.').is_some() {
-                return Ok(Location::File(File {
-                    path: s.to_string(),
-                }));
-            }
-
-            Ok(Location::Folder(Folder {
-                path: s.to_string(),
-            }))
-        }
-    }
-
-    #[derive(Serialize, Deserialize)]
-    pub struct State {
-        pub location: Location,
-        // parent: Option<String>,
-        // folders: Vec<String>, // a set of routes that can be promoted to a Location
-        // thumbnails: Vec<Thumbnail>, // a set of routes + bytes for thumbnails.
-        // selected_folder: Option<u32>,
-
-        // these 2 could be collapsed into one. If a thumbnail is selected, an
-        // image with the same path/id must be selected.
-        // selected_thumbnail: Option<u32>,
-        // selected_image: Option<Image>,
-    }
-
-    #[derive(Serialize, Deserialize)]
-    pub struct World {
-        history: Vec<State>,
-        current: State,
-    }
-}
+// TODO: Decide whether I need a complementary ephemeral storage.
+// struct Storagex {
+//     store: Mutex<HashMap<u64, String>>,
+// }
 
 #[tauri::command]
-async fn locate(location: String) -> Result<ui::State, String> {
-    Ok(ui::State {
-        location: ui::Location::from_str(&location)?,
-    })
+async fn locate(route: String, pool: tauri::State<'_, Pool>) -> Result<nut::State, String> {
+    match services::navigator::get_path(&pool, &route) {
+        Ok(state) => Ok(state),
+        Err(err) => Err(err.to_string()),
+    }
 }
 
-#[tauri::command]
-async fn state() -> Vec<u8> {
-    let p = std::path::PathBuf::from_str("..").unwrap();
-    dbg!(p.canonicalize());
-    let mut f = fs::File::open("../bald_man.png").unwrap();
-    let mut data = Vec::new();
-    f.read_to_end(&mut data).unwrap();
-    // base64::encode(data)
-    data
-}
+// #[tauri::command]
+// async fn state() -> Vec<u8> {
+//     let p = std::path::PathBuf::from_str("..").unwrap();
+//     dbg!(p.canonicalize());
+//     let mut f = fs::File::open("../bald_man.png").unwrap();
+//     let mut data = Vec::new();
+//     f.read_to_end(&mut data).unwrap();
+//     // base64::encode(data)
+//     data
+// }
 
 fn edit_menu() -> MenuEntry {
     MenuEntry::Submenu(Submenu::new(
@@ -128,11 +52,61 @@ fn edit_menu() -> MenuEntry {
     ))
 }
 
+#[tauri::command]
+fn connect(pool: tauri::State<Pool>) {
+    let conn = pool.get().unwrap();
+
+    let query = r#"
+    select
+        name,
+        type
+   from
+        pragma_table_list
+    "#;
+
+    let x = Storage::get(&conn, &query, params![], |row| {
+        let name: String = row.get(0)?;
+        let kind: String = row.get(1)?;
+
+        Ok((name, kind))
+    })
+    .unwrap();
+
+    dbg!(x);
+}
+
+// #[tauri::command]
+// fn storage_insert(key: u64, value: String, storage: State<Storagex>) {
+//     // mutate the storage behind the Mutex
+//     storage.store.lock().unwrap().insert(key, value);
+//
+//     dbg!(storage.store.lock().unwrap().len());
+// }
+
 fn main() -> anyhow::Result<()> {
     let ctx = tauri::generate_context!();
+    // TODO: resolve the db path with dirs.
+    let pool = services::starter::start("../squirrel.db")?;
 
     let app = tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![locate, state])
+        // .manage(Storagex {
+        //     store: Default::default(),
+        // })
+        .manage(pool)
+        .setup(|app| {
+            #[cfg(debug_assertions)] // only include this code on debug builds
+            {
+                let window = app.get_window("main").unwrap();
+                window.open_devtools();
+                window.close_devtools();
+            }
+
+            // let main_window = app.get_window("main").unwrap();
+            // tauri::api::dialog::message(Some(&main_window), "Hello", "Jo t'estimo més!!");
+
+            Ok(())
+        })
+        .invoke_handler(tauri::generate_handler![locate, connect,])
         .menu(Menu::with_items([
             MenuEntry::Submenu(Submenu::new(
                 &ctx.package_info().name,
