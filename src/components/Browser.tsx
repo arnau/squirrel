@@ -1,10 +1,9 @@
 import LocatorBar from "./LocatorBar"
-import { Catalogue, Context, getCurrentStem, getFolders, getLocation } from "../world"
-import { Grid, GridItem, useTheme } from "@chakra-ui/react"
+import { Catalogue, getCurrentStem, getFolders, getLocation, useStore } from "../world"
+import { Grid, GridItem, Link, List, ListItem } from "@chakra-ui/react"
 import { MaximiseButton } from "./ExpandToggle"
-import { useContext } from "react"
-import { ThemeContext } from "@emotion/react"
 import { Folder } from "../catalogue/value"
+import { lastSegment, Route } from "../aux/route"
 
 /** Defines the main layout for browsing the catalogue.
  */
@@ -42,7 +41,8 @@ function LocatorPane() {
 }
 
 function FolderPane() {
-  const { world } = useContext(Context)
+  const world = useStore(state => state.world)
+  const locate = useStore(state => state.locate)
   const folders = getFolders(world as Catalogue)
   const location = getLocation(world as Catalogue)
   const currentStem = getCurrentStem(location)
@@ -51,34 +51,52 @@ function FolderPane() {
 
   return (
     <GridItem colSpan={1} rowSpan={5} bg="neutral" overflowY="auto">
-      <FolderList folders={folders} />
+      <FolderList folders={folders} locate={locate} />
     </GridItem>
   )
 }
 
 interface FolderListProps {
   folders: Array<Folder>;
+  locate: (route: Route) => void;
 }
 
-function FolderList({ folders }: FolderListProps) {
-  const fs = folders.map(folder => {
-    return <li key={folder.id} style={{ color: "whitesmoke" }}>{folder.path}</li>
+function FolderList({ folders, locate }: FolderListProps) {
+  const list = folders.map(folder => {
+    return <FolderItem key={folder.id} locate={locate} {...folder} />
   })
 
   return (
-    folders.length == 0
-      ? null
-      : <ul>
-        {fs}
-      </ul>
+    folders.length > 0
+      ? <List>{list}</List>
+      : null
+  )
+}
+
+interface FolderItemProps {
+  id: string;
+  path: Route;
+  locate: (route: Route) => void;
+}
+
+function FolderItem({ path, locate }: FolderItemProps) {
+  const name = lastSegment(path)
+
+  return (
+    <ListItem style={{ color: "whitesmoke" }}>
+      <Link onClick={event => {
+        event.preventDefault()
+        locate(path)
+      }}>{name}</Link>
+    </ListItem>
   )
 }
 
 function AssetPane() {
-  const { dispatch } = useContext(Context)
+  const focus = useStore(state => state.focus)
   return (
     <GridItem colSpan={3} rowSpan={4} bg="neutral" position="relative">
-      <MaximiseButton setExpansion={() => dispatch?.({ type: "focus" })} />
+      <MaximiseButton setExpansion={focus} />
     </GridItem>
   )
 }

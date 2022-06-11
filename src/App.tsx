@@ -1,34 +1,25 @@
+// import { createImage, revokeImage } from "./aux/image"
 import "./App.css"
 import { StartScreen } from "./components/StartScreen"
 import { CatalogueScreen } from "./components/CatalogueScreen"
-import { useContext, useEffect } from 'react'
-// import { createImage, revokeImage } from "./aux/image"
-import { useWorld, Context, locate, getRoute } from "./world"
-import { Value } from "./catalogue/value"
+import { useStore } from "./world"
 
 function App() {
-  const ctx = useWorld("/")
-  const { world, dispatch } = ctx
+  const locate = useStore(state => state.locate)
 
-  useEffect(() => {
-    locate(getRoute(world))
-      .then((value) => {
-        dispatch?.({ type: "locate", payload: value as Value })
-      })
-  }, [])
+  // Initial fetch.
+  locate("/")
 
   return (
-    <Context.Provider value={ctx}>
-      <Router />
-    </Context.Provider>
+    <Router />
   )
 }
 
 function Router() {
-  let { world } = useContext(Context)
+  let worldId = useStore(state => state.world.id)
 
-  switch (world.id) {
-    case "pending":
+  switch (worldId) {
+    case "void":
       return <StartScreen />
     case "catalogue":
       return <CatalogueScreen />

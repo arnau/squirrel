@@ -1,42 +1,62 @@
-import { createContext, useReducer, Reducer, Dispatch } from "react"
 import { invoke } from "@tauri-apps/api/tauri"
 import { File, Folder, Value, Location, Stem } from "./catalogue/value"
+import createStore from "zustand"
+import { Route } from "./aux/route"
+// import createStore, { SetState } from "zustand"
+
+export interface Store {
+  world: World;
+  locate: (route: Route) => void;
+  setRoute: (route: Route) => void;
+  getRoute: () => Route | null;
+  focus: () => void;
+  blur: () => void;
+  isInFocus: () => boolean;
+}
+
+export const useStore = createStore<Store>((set, get) => ({
+  // The world starts in the Void.
+  world: { id: "void" },
+
+  // Catalogue Actions
+  locate: async (route: Route) => {
+    try {
+      const value: Value = await invoke("locate", { route })
+      console.log("locate", value)
+
+      set(state => ({ world: updateCatalogue(value, state.world) }))
+    } catch (error) {
+      console.error(error)
+    }
+  },
+  setRoute: (route) => {
+    set(state => ({ world: updateRoute(route, state.world) }))
+  },
+  getRoute: () => {
+    const world = get().world
+
+    if (world.id == "catalogue") {
+      return world.ui.newRoute
+    }
+
+    return null
+  },
+  focus: () => {
+    set(state => ({ world: focus(state.world as Catalogue) }))
+  },
+  blur: () => {
+    set(state => ({ world: blur(state.world as Catalogue) }))
+  },
+  isInFocus: () => isInFocus(get().world as Catalogue)
+}))
 
 
 // The world's state identifier
-export type WorldId = "pending" | "catalogue"
+export type WorldId = "void" | "catalogue"
 
-export type Action = {
-  type: "locate" | "focus" | "blur" | "exception";
-  payload?: Value;
-}
-
-export interface LocateAction {
-  type: "locate";
-  payload: Value;
-}
-
-export interface FocusAction {
-  type: "focus" | "blur";
-}
-
-export interface BlameAction {
-  type: "blame";
-  message: string;
-  // trace ?
-}
-
-// TODO: Replace reducer with this action shape.
-export type Action2 = LocateAction | FocusAction | BlameAction
-
-
-// A unique route or path.
-export type Route = string
-
-// The state of the world whilst waiting for data to be retrieved.
-export interface Pending {
-  id: "pending";
-  route: Route;
+// The state of the world where nothing exist yet
+export interface Void {
+  id: "void";
 }
 
 // The state of the world after an exception.
@@ -51,46 +71,56 @@ export interface Exception {
 // The world as a catalogue.
 export interface Catalogue {
   id: "catalogue";
-  route: Route;
   current: Value;
   ui: Ui;
 }
 
 export interface Ui {
   isFocusMode: boolean;
+  // used by LocatorBar
+  newRoute: Route;
 }
 
-export type World = Pending | Catalogue;
+export type World = Void | Catalogue;
 
-
-// A world starts with nothing. Pending the given route.
-export function initWorld(route: Route): World {
-  const world: World = {
-    id: "pending",
-    route,
-  }
-
-  return world
-}
-
-export function newCatalogue(route: Route, value: Value): World {
+export function initCatalogue(value: Value): World {
   return {
     id: "catalogue",
-    route,
     current: value,
     ui: {
+      newRoute: value.location.path,
       isFocusMode: false,
     }
   }
 }
 
-export function updateCatalogue(newValue: Value, world: World): World {
-  if (world.id == "pending") {
-    return newCatalogue(world.route, newValue)
+export function updateCatalogue(value: Value, world: World): World {
+  if (world.id == "void") {
+    return initCatalogue(value)
   } else {
     const newWorld = {
       ...world,
-      current: newValue
+      current: value,
+      ui: {
+        ...world.ui,
+        newRoute: value.location.path,
+      }
+    }
+
+    return newWorld
+  }
+}
+
+export function updateRoute(route: Route, world: World): World {
+  if (world.id == "void") {
+    return world
+  } else {
+    const newWorld = {
+      ...world,
+      ui: {
+        ...world.ui,
+        newRoute: route,
+      }
     }
 
     return newWorld
@@ -121,52 +151,16 @@ function blur(world: Catalogue): Catalogue {
   return newWorld
 }
 
-export interface WorldBag {
-  world: World;
-  dispatch?: Dispatch<Action>;
-}
-
-
-export function useWorld(route: Route): WorldBag {
-  const initialState = initWorld(route)
-  const [world, dispatch] = useReducer<Reducer<World, Action>>(reducer, initialState)
-
-  return ({ world, dispatch })
-}
-
-export function reducer(world: World, action: any) {
-  switch (action.type) {
-    case "locate":
-      // return { ...world, current: action.payload }
-      return updateCatalogue(action.payload, world)
-    case "focus":
-      if (world.id != "catalogue") {
-        return world
-      } else {
-        return focus(world)
-      }
-    case "blur":
-      if (world.id != "catalogue") {
-        return world
-      } else {
-        return blur(world)
-      }
-    default:
-      throw new Error("unknown action")
-  }
-}
-
-
-export const Context = createContext<WorldBag>({
-  world: initWorld("/"),
-})
-
-
 
 /** Extracts the route from the state.
   */
-export function getRoute(world: World): Route {
-  return world.route
+export function getRoute(world: World): Route | null {
+  switch (world.id) {
+    case "void":
+      return null
+    case "catalogue":
+      return world.current.location.path
+  }
 }
 
 export function getFolders(catalogue: Catalogue): Array<Folder> {
@@ -192,10 +186,6 @@ export function getCurrentStem(location: Location): Stem {
   */
 export function compare(a: World, b: World): boolean {
   return getRoute(a) == getRoute(b)
-}
-
-export function locate(route: Route) {
-  return invoke("locate", { route })
 }
 
 export function isInFocus(world: Catalogue): boolean {

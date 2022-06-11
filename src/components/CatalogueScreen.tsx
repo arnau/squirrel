@@ -1,14 +1,13 @@
 import { Browser } from "./Browser"
 import { BrowserFocus } from "./BrowserFocus"
-import { isInFocus, Context, Catalogue } from "../world"
-import { useContext } from "react"
+import { useStore } from "../world"
 
 
 export function CatalogueScreen() {
-  const { world } = useContext(Context)
+  const isInFocus = useStore(state => state.isInFocus)
 
   return (
-    isInFocus((world as Catalogue))
+    isInFocus()
       ? <BrowserFocus />
       : <Browser />
   )

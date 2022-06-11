@@ -1,7 +1,6 @@
-import { Context } from "../world"
+import { useStore } from "../world"
 import { Grid, GridItem } from "@chakra-ui/react"
 import { MinimiseButton } from "./ExpandToggle"
-import { useContext } from "react"
 
 
 export function BrowserFocus() {
@@ -37,12 +36,11 @@ function NextPane() {
 }
 
 function AssetPane() {
-  const { dispatch } = useContext(Context)
+  const blur = useStore(state => state.blur)
   return (
     <GridItem colSpan={22} rowSpan={5} bg="neutral" position="relative">
-      <MinimiseButton setExpansion={() => dispatch?.({ type: "blur" })} />
+      <MinimiseButton setExpansion={blur} />
     </GridItem>
-
   )
 }
 
