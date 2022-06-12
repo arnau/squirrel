@@ -1,13 +1,29 @@
+import FolderPane from "./FolderPane"
 import LocatorBar from "./LocatorBar"
-import { Catalogue, getCurrentStem, getFolders, getLocation, useStore } from "../world"
-import { Grid, GridItem, Link, List, ListItem } from "@chakra-ui/react"
+import { Catalogue, getFolders, getRoots, getLocation, useStore } from "../world"
+import { Grid, GridItem } from "@chakra-ui/react"
 import { MaximiseButton } from "./ExpandToggle"
-import { Folder } from "../catalogue/value"
-import { lastSegment, Route } from "../aux/route"
+import { MouseEvent } from "react"
+
 
 /** Defines the main layout for browsing the catalogue.
  */
 export function Browser() {
+  const world = useStore(state => state.world) as Catalogue
+  const locate = useStore(state => state.locate)
+  const roots = getRoots(world)
+  const folders = getFolders(world)
+  const location = getLocation(world)
+
+  const handleClick = (event: MouseEvent<HTMLElement>) => {
+    const target = event.target as HTMLElement
+
+    if (target.nodeName == "A") {
+      locate((target as HTMLAnchorElement).pathname)
+    }
+  }
+
+
   return (
     <Grid
       gap={1}
@@ -18,7 +34,11 @@ export function Browser() {
       minWidth={900}
     >
       <LocatorPane />
-      <FolderPane />
+      <FolderPane
+        location={location}
+        roots={roots}
+        folders={folders}
+        onClick={handleClick} />
       <ThumbnailPane />
 
       <AssetPane />
@@ -40,57 +60,6 @@ function LocatorPane() {
   )
 }
 
-function FolderPane() {
-  const world = useStore(state => state.world)
-  const locate = useStore(state => state.locate)
-  const folders = getFolders(world as Catalogue)
-  const location = getLocation(world as Catalogue)
-  const currentStem = getCurrentStem(location)
-
-  console.log(currentStem)
-
-  return (
-    <GridItem colSpan={1} rowSpan={5} bg="neutral" overflowY="auto">
-      <FolderList folders={folders} locate={locate} />
-    </GridItem>
-  )
-}
-
-interface FolderListProps {
-  folders: Array<Folder>;
-  locate: (route: Route) => void;
-}
-
-function FolderList({ folders, locate }: FolderListProps) {
-  const list = folders.map(folder => {
-    return <FolderItem key={folder.id} locate={locate} {...folder} />
-  })
-
-  return (
-    folders.length > 0
-      ? <List>{list}</List>
-      : null
-  )
-}
-
-interface FolderItemProps {
-  id: string;
-  path: Route;
-  locate: (route: Route) => void;
-}
-
-function FolderItem({ path, locate }: FolderItemProps) {
-  const name = lastSegment(path)
-
-  return (
-    <ListItem style={{ color: "whitesmoke" }}>
-      <Link onClick={event => {
-        event.preventDefault()
-        locate(path)
-      }}>{name}</Link>
-    </ListItem>
-  )
-}
 
 function AssetPane() {
   const focus = useStore(state => state.focus)

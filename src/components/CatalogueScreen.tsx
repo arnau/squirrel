@@ -4,10 +4,10 @@ import { useStore } from "../world"
 
 
 export function CatalogueScreen() {
-  const isInFocus = useStore(state => state.isInFocus)
+  const isInFocus = useStore(state => state.isInFocus())
 
   return (
-    isInFocus()
+    isInFocus
       ? <BrowserFocus />
       : <Browser />
   )

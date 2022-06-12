@@ -7,7 +7,7 @@ import theme from './theme'
 
 document.addEventListener('DOMContentLoaded', async () => {
   // TODO: read user preferences via Tauri command.
-  console.log("loading complete")
+  console.info("loading complete")
 
   ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>

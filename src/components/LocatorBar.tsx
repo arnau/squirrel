@@ -1,13 +1,14 @@
 import { ReactElement, ChangeEvent, KeyboardEvent, MouseEvent, useState } from "react"
 import { Flex } from "@chakra-ui/react"
 import { Input, Button } from "@chakra-ui/react"
-import { useStore, getRoute } from "../world"
+import { useStore } from "../world"
+import { Route } from "../aux/route"
 
 
 export default function LocatorBar(): ReactElement {
   const locate = useStore(state => state.locate)
   const setRoute = useStore(state => state.setRoute)
-  const route = useStore(state => state.getRoute())
+  const route = useStore(state => state.getRoute()) as Route
 
   const handleSubmit =
     (_event: MouseEvent<HTMLButtonElement>) => {

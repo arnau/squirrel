@@ -22,7 +22,6 @@ export const useStore = createStore<Store>((set, get) => ({
   locate: async (route: Route) => {
     try {
       const value: Value = await invoke("locate", { route })
-      console.log("locate", value)
 
       set(state => ({ world: updateCatalogue(value, state.world) }))
     } catch (error) {
@@ -161,6 +160,12 @@ export function getRoute(world: World): Route | null {
     case "catalogue":
       return world.current.location.path
   }
+}
+
+export function getRoots(catalogue: Catalogue): Array<Folder> {
+  const { roots } = catalogue.current
+
+  return roots
 }
 
 export function getFolders(catalogue: Catalogue): Array<Folder> {
