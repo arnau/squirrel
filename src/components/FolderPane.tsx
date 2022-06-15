@@ -1,6 +1,6 @@
-import { Box, GridItem, Link, List, ListItem, Text } from "@chakra-ui/react"
+import { Box, GridItem, Link, List, ListItem, Text, useStyleConfig } from "@chakra-ui/react"
 import { Folder, Location } from "../catalogue/value"
-import { MouseEvent } from "react"
+import { MouseEvent, ReactNode } from "react"
 import { lastSegment, Route } from "../aux/route"
 
 
@@ -40,9 +40,7 @@ interface FolderPaneProps {
 function Root({ path }: Folder) {
   return (
     <Box>
-      <Link href={path} onClick={event => event?.preventDefault()}>
-        {path}
-      </Link>
+      <NavLink href={path}>{path}</NavLink>
     </Box>
   )
 }
@@ -56,9 +54,7 @@ interface CurrentRootProps {
 function CurrentRoot({ path, folders }: CurrentRootProps) {
   return (
     <Box>
-      <Link href={path} onClick={event => event?.preventDefault()}>
-        {path}
-      </Link>
+      <NavLink href={path}>{path}</NavLink>
       <FolderList folders={folders} />
     </Box>
   )
@@ -68,7 +64,7 @@ function FolderList({ folders }: { folders: Array<Folder> }) {
   return (
     folders.length > 0
       ? <List>{folders.map(folder => <FolderItem key={folder.id} {...folder} />)}</List>
-      : <Text>(empty)</Text>
+      : <Text fontSize="small">(empty)</Text>
   )
 }
 
@@ -76,8 +72,23 @@ function FolderItem({ path }: Folder) {
   const name = lastSegment(path)
 
   return (
-    <ListItem style={{ color: "whitesmoke" }}>
-      <Link href={path} onClick={event => event.preventDefault()}>{name}</Link>
+    <ListItem>
+      <NavLink href={path}>{name}</NavLink>
     </ListItem>
+  )
+}
+
+function NavLink({ href, children }: { href: Route, children: ReactNode }) {
+  const styles = useStyleConfig("NavLink")
+
+  return (
+    <Link
+      sx={styles}
+      onClick={(event: MouseEvent<HTMLElement>) => event.preventDefault()}
+      tabIndex={0}
+      href={href}
+    >
+      {children}
+    </Link>
   )
 }

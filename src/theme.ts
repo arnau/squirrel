@@ -3,6 +3,7 @@ import { extendTheme, type ThemeConfig } from '@chakra-ui/react'
 const config: ThemeConfig = {
   initialColorMode: 'dark',
   useSystemColorMode: false,
+  cssVarPrefix: 'sqrl',
 }
 
 const theme = extendTheme({
@@ -18,6 +19,31 @@ const theme = extendTheme({
       900: '#101010',
     },
     neutral: '#505050',
+  },
+  components: {
+    NavLink: {
+      baseStyle: {
+        display: "block",
+        padding: "4px",
+        color: "whitesmoke",
+        fontSize: "small",
+        _hover: {
+          backgroundColor: "gray.700",
+          textDecoration: "none",
+        }
+      },
+    },
+    Link: {
+      baseStyle: {
+        display: "block",
+        padding: "4px",
+        color: "whitesmoke",
+        _hover: {
+          backgroundColor: "gray.700",
+          textDecoration: "none",
+        }
+      },
+    }
   }
 })
 
