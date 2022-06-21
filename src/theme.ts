@@ -6,6 +6,19 @@ const config: ThemeConfig = {
   cssVarPrefix: 'sqrl',
 }
 
+const Link = {
+  baseStyle: {
+    display: "block",
+    padding: "4px",
+    color: "whitesmoke",
+    _hover: {
+      backgroundColor: "gray.700",
+      textDecoration: "none",
+    }
+  },
+}
+
+
 const theme = extendTheme({
   config,
   colors: {
@@ -23,27 +36,11 @@ const theme = extendTheme({
   components: {
     NavLink: {
       baseStyle: {
-        display: "block",
-        padding: "4px",
-        color: "whitesmoke",
         fontSize: "small",
-        _hover: {
-          backgroundColor: "gray.700",
-          textDecoration: "none",
-        }
+        ...Link.baseStyle,
       },
     },
-    Link: {
-      baseStyle: {
-        display: "block",
-        padding: "4px",
-        color: "whitesmoke",
-        _hover: {
-          backgroundColor: "gray.700",
-          textDecoration: "none",
-        }
-      },
-    }
+    Link,
   }
 })
 

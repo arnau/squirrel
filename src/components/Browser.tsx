@@ -1,6 +1,7 @@
+import { FilePane } from "./FilePane"
 import FolderPane from "./FolderPane"
 import LocatorBar from "./LocatorBar"
-import { Catalogue, getFolders, getRoots, getLocation, useStore } from "../world"
+import { Catalogue, getFiles, getFolders, getRoots, getLocation, useStore } from "../world"
 import { Grid, GridItem } from "@chakra-ui/react"
 import { MaximiseButton } from "./ExpandToggle"
 import { MouseEvent } from "react"
@@ -13,6 +14,7 @@ export function Browser() {
   const locate = useStore(state => state.locate)
   const roots = getRoots(world)
   const folders = getFolders(world)
+  const files = getFiles(world)
   const location = getLocation(world)
 
   const handleClick = (event: MouseEvent<HTMLElement>) => {
@@ -39,7 +41,11 @@ export function Browser() {
         roots={roots}
         folders={folders}
         onClick={handleClick} />
-      <ThumbnailPane />
+      <FilePane
+        location={location}
+        files={files}
+        onClick={handleClick}
+      />
 
       <AssetPane />
       <AssetDetailsPane />
@@ -66,17 +72,6 @@ function AssetPane() {
   return (
     <GridItem colSpan={3} rowSpan={4} bg="neutral" position="relative">
       <MaximiseButton setExpansion={focus} />
-    </GridItem>
-  )
-}
-
-function ThumbnailPane() {
-  return (
-    <GridItem
-      colSpan={2}
-      rowSpan={5}
-      bg="neutral"
-    >
     </GridItem>
   )
 }

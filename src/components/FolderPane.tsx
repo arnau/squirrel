@@ -10,7 +10,13 @@ export default function FolderPane({ location, roots, folders, onClick }: Folder
   // It's /
   if (currentRoot == undefined) {
     return (
-      <GridItem colSpan={1} rowSpan={5} bg="neutral" overflowY="auto" onClick={onClick}>
+      <GridItem
+        colSpan={1}
+        rowSpan={5}
+        bg="neutral"
+        overflowY="auto"
+        onClick={onClick}
+      >
         {
           roots.map(root => <Root key={root.id} {...root} />)
         }

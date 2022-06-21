@@ -174,6 +174,13 @@ export function getFolders(catalogue: Catalogue): Array<Folder> {
   return folders
 }
 
+export function getFiles(catalogue: Catalogue): Array<File> {
+  const { files } = catalogue.current
+
+  return files
+}
+
+
 export function getLocation(catalogue: Catalogue): Location {
   const { location } = catalogue.current
 
