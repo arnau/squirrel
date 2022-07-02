@@ -1,7 +1,7 @@
 use crate::entities::entry::Kind;
 use serde::{Deserialize, Serialize};
 use std::fmt;
-use super::asset::Asset;
+use super::asset::AssetMetadata;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "kind", rename = "snake_case")]
@@ -9,7 +9,7 @@ pub enum Stem {
     File {
         id: String,
         path: String,
-        asset: Asset,
+        metadata: AssetMetadata,
     },
     Folder {
         id: String,

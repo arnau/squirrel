@@ -57,7 +57,7 @@ impl<'c, Conn: Deref<Target = Connection>> AssetRepository<'c, Conn> {
             let previews_path = source
                 .previews_path()
                 .expect("Expected path to previews to exist.");
-            let pyramid = Pyramid::new(previews_path, pyramid_filename);
+            let pyramid = Pyramid::new(previews_path, &pyramid_filename, &orientation);
 
             Ok(AssetRow {
                 id,
@@ -81,7 +81,8 @@ impl<'c, Conn: Deref<Target = Connection>> AssetRepository<'c, Conn> {
             asset.pyramid_filename,
             source.path,
             source.name,
-            source.version
+            source.version,
+            asset.orientation
         FROM
             asset
             INNER JOIN
@@ -99,6 +100,7 @@ impl<'c, Conn: Deref<Target = Connection>> AssetRepository<'c, Conn> {
             let source_path: String = row.get(1)?;
             let source_name: String = row.get(2)?;
             let source_version: usize = row.get(3)?;
+            let orientation: String = row.get(4)?;
             let source = Source {
                 name: source_name,
                 path: source_path,
@@ -107,7 +109,7 @@ impl<'c, Conn: Deref<Target = Connection>> AssetRepository<'c, Conn> {
             let previews_path = source
                 .previews_path()
                 .expect("Expected path to previews to exist.");
-            let pyramid = Pyramid::new(previews_path, pyramid_filename);
+            let pyramid = Pyramid::new(previews_path, &pyramid_filename, &orientation);
 
             Ok(pyramid)
         })

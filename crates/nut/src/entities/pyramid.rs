@@ -9,13 +9,28 @@ use std::{fs, io};
 pub struct Pyramid {
     pub filename: String,
     pub path: PathBuf,
+    // Images are
+    // - AB: correct.
+    // - AD: ?
+    // - BC: rotated 90 CCW
+    // - DA: rotated 90 CW
+    //
+    //         A
+    //     +-------+
+    //     |       |
+    //   D |       | B
+    //     |       |
+    //     +-------+
+    //         C
+    pub orientation: String,
 }
 
 impl Pyramid {
-    pub fn new<S: Into<String>>(path: PathBuf, filename: S) -> Self {
+    pub fn new<S: Into<String>>(path: PathBuf, filename: S, orientation: S) -> Self {
         Pyramid {
             path,
             filename: filename.into(),
+            orientation: orientation.into(),
         }
     }
 

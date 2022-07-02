@@ -1,4 +1,4 @@
-use crate::entities::asset::{Asset, Blob, BlobSize};
+use crate::entities::asset::{Blob, BlobSize};
 use crate::entities::entry::Kind;
 use crate::entities::location::Location;
 use crate::entities::state::{File, Folder};
@@ -74,14 +74,9 @@ where
             Kind::Folder => Stem::Folder { id, path },
             Kind::File => {
                 let asset_row = asset_repo.get_for(&id)?;
-                let blob = asset_row.pyramid.blob(BlobSize::Max)?;
-                let asset = Asset {
-                    id: asset_row.id,
-                    metadata: asset_row.metadata,
-                    blob,
-                };
+                let metadata = asset_row.metadata;
 
-                Stem::File { id, path, asset }
+                Stem::File { id, path, metadata }
             }
         };
 
@@ -119,6 +114,14 @@ pub fn get_thumbnail(pool: &Pool, id: &str) -> Result<Blob> {
     let conn = pool.get()?;
     let pyramid = AssetRepository(&conn).get_pyramid(id)?;
     let blob = pyramid.blob(BlobSize::Thumbnail)?;
+
+    Ok(blob)
+}
+
+pub fn get_asset(pool: &Pool, id: &str) -> Result<Blob> {
+    let conn = pool.get()?;
+    let pyramid = AssetRepository(&conn).get_pyramid(id)?;
+    let blob = pyramid.blob(BlobSize::Max)?;
 
     Ok(blob)
 }

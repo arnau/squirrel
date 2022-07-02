@@ -8,8 +8,8 @@ fn main() -> anyhow::Result<()> {
     // let pool = services::starter::start(db.to_str().unwrap())?;
 
 
-    let pool = services::starter::start(":memory:")?;
-    // let pool = services::starter::start("./squirrel.db")?;
+    // let pool = services::starter::start(":memory:")?;
+    let pool = services::starter::start("./squirrel.db")?;
 
     let cat2021 = "/Users/arnau/kitchen/squirrel/playground/catalogue/2021_JC_Candanedo-v11.lrcat";
     let cat2019 = "/Users/arnau/kitchen/squirrel/playground/catalogue/2019_JC_Candanedo-v11.lrcat";

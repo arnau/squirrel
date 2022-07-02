@@ -1,9 +1,14 @@
-import { useStore } from "../world"
+import { Catalogue, getCurrentStem, getLocation, useStore } from "../world"
 import { Grid, GridItem } from "@chakra-ui/react"
 import { MinimiseButton } from "./ExpandToggle"
+import { convertFileSrc } from "@tauri-apps/api/tauri"
 
 
 export function BrowserFocus() {
+  const world = useStore(state => state.world) as Catalogue
+  const location = getLocation(world)
+  const stem = getCurrentStem(location)
+
   return (
     <Grid
       gap={1}
@@ -13,34 +18,47 @@ export function BrowserFocus() {
       bg="gray.800"
       minWidth={900}
     >
-      <PreviousPane />
-      <AssetPane />
-      <NextPane />
-      <AssetDetailsPane />
+      <AssetPane stem={stem} />
     </Grid>
   )
 }
 
-function PreviousPane() {
-  return (
-    <GridItem colSpan={1} rowSpan={6} bg="neutral">
-    </GridItem>
-  )
-}
-
-function NextPane() {
-  return (
-    <GridItem colSpan={1} rowSpan={6} bg="neutral">
-    </GridItem>
-  )
-}
-
-function AssetPane() {
+function AssetPane({ stem }: any) {
   const blur = useStore(state => state.blur)
   return (
-    <GridItem colSpan={22} rowSpan={5} bg="neutral" position="relative">
-      <MinimiseButton setExpansion={blur} />
+    <GridItem colSpan={24} rowSpan={6} bg="neutral" position="relative">
+      <Asset
+        id={stem.id}
+        height={stem.metadata.height}
+        width={stem.metadata.width}
+        blur={blur}
+      />
     </GridItem>
+  )
+}
+
+function Asset({ id, width, height, orientation, blur }: any) {
+  const url = convertFileSrc(id, "image")
+  const [w, h] = orientation == "AB" ? [width, height] : [height, width]
+
+  console.log(orientation, w, h)
+
+  return (
+    <div style={{
+      overflow: "auto",
+      height: "100vh",
+    }}>
+      <MinimiseButton setExpansion={blur} />
+      <img
+        src={url}
+        alt=""
+        height={h}
+        width={w}
+        style={{
+          display: "block",
+        }}
+      />
+    </div>
   )
 }
 

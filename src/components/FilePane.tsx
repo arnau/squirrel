@@ -1,5 +1,6 @@
 import { Box, Grid, GridItem, Image, Link, Text } from "@chakra-ui/react"
 import { MouseEvent } from "react";
+import { Route } from "../aux/route";
 import { File, Location } from "../catalogue/value"
 
 
@@ -15,7 +16,8 @@ export function FilePane({ location, files, onClick }: FilePaneProps) {
     >
       {
         files.length > 0
-          ? files.map(file => <FileItem key={file.id} {...file} />)
+          ? files.map(file =>
+            <FileItem key={file.id} current_route={location.path} {...file} />)
           : <Text>(empty)</Text>
       }
     </GridItem>
@@ -29,9 +31,13 @@ interface FilePaneProps {
 }
 
 
-function FileItem({ id, path, asset }: File) {
+function FileItem({ current_route, id, path, asset }: File & { current_route: Route }) {
   //TODO: ensure asset metadata exists.
   // console.log(asset)
+
+  const selectedColour = path == current_route
+    ? "red"
+    : "neutral"
 
   return (
     <Grid
@@ -44,7 +50,7 @@ function FileItem({ id, path, asset }: File) {
         </Box>
       </GridItem>
       <GridItem
-        background="neutral"
+        background={selectedColour}
       >
         <Link
           id={id}

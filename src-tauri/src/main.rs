@@ -20,7 +20,9 @@ use tauri::{CustomMenuItem, Menu, MenuEntry, MenuItem, Submenu};
 
 #[tauri::command]
 async fn locate(route: String, pool: tauri::State<'_, Pool>) -> Result<nut::State, String> {
-    match services::navigator::get_path(&pool, &route) {
+    let res = services::navigator::get_path(&pool, &route);
+
+    match res {
         Ok(state) => Ok(state),
         Err(err) => Err(err.to_string()),
     }
@@ -83,6 +85,46 @@ fn connect(pool: tauri::State<Pool>) {
 //     dbg!(storage.store.lock().unwrap().len());
 // }
 
+// https://github.com/tauri-apps/wry/blob/dev/examples/custom_protocol.rs
+// https://docs.rs/tauri/1.0.0-beta.8/tauri/struct.Builder.html#method.register_uri_scheme_protocol
+fn image_protocol(
+    app: &tauri::AppHandle,
+    request: &tauri::http::Request,
+) -> Result<tauri::http::Response, Box<dyn std::error::Error>> {
+    let pool: tauri::State<Pool> = app.try_state().expect("couldn't find state pool.");
+    // prepare our response
+    let mut response = tauri::http::ResponseBuilder::new();
+    let route = request
+        .uri()
+        .strip_prefix("image://")
+        .expect("failed to remove image:// from the URI.");
+    let route = percent_encoding::percent_decode(route.as_bytes())
+        .decode_utf8_lossy()
+        .to_string();
+
+    dbg!(&route);
+
+    let blob =
+        nut::services::navigator::get_asset(&pool, &route).expect("failed to get the asset.");
+
+    // if path != "example/test_video.mp4" {
+    //   // return error 404 if it's not out video
+    //   return response.mimetype("text/plain").status(404).body(Vec::new());
+    // }
+
+    // default status code
+    // let mut status_code = 200;
+
+    // Only macOS and Windows are supported, if you set headers in linux they are ignored
+    response = response
+        .header("Content-Type", "image/jpg")
+        .header("Content-Length", blob.data.len())
+        // TODO
+        .header("ETag", "hash_from_blob");
+
+    response.mimetype("image/jpeg").status(200).body(blob.data)
+}
+
 fn main() -> anyhow::Result<()> {
     let ctx = tauri::generate_context!();
     // TODO: resolve the db path with dirs.
@@ -128,6 +170,7 @@ fn main() -> anyhow::Result<()> {
                 _ => {}
             }
         })
+        .register_uri_scheme_protocol("image", image_protocol)
         .build(ctx)?;
     // .expect("error while running tauri application");
 

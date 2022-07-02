@@ -325,7 +325,8 @@ impl ImportRepository {
         SELECT
             entry.id,
             entry.path,
-            asset.pyramid_filename
+            asset.pyramid_filename,
+            asset.orientation
         FROM
             asset
         INNER JOIN
@@ -337,8 +338,10 @@ impl ImportRepository {
                 let entry_id: String = row.get(0)?;
                 let path: String = row.get(1)?;
                 let pyramid_filename: String = row.get(2)?;
+                let orientation: String = row.get(3)?;
                 let pyramid_fullpath =
-                    Pyramid::new(previews_path.to_path_buf(), &pyramid_filename).absolute_path();
+                    Pyramid::new(previews_path.to_path_buf(), &pyramid_filename, &orientation)
+                        .absolute_path();
 
                 if pyramid_fullpath.exists() {
                     Ok(None)

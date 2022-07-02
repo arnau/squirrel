@@ -34,7 +34,7 @@ export function MaximiseButton({ setExpansion }: ExpandToggleProps): ReactElemen
 export function MinimiseButton({ setExpansion }: ExpandToggleProps): ReactElement {
   return (
     <IconButton
-      position="absolute"
+      position="fixed"
       right="10px"
       top="10px"
       padding="0"
