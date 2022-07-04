@@ -94,10 +94,7 @@ function AssetPane({ stem }: any) {
 }
 
 function Asset({ id, width, height, orientation, focus }: any) {
-  const url = convertFileSrc(id, "image")
-  const [w, h] = orientation == "AB" ? [width, height] : [height, width]
-
-  console.log(orientation, w, h)
+  const url = convertFileSrc(`${id}.max`, "image")
 
   return (
     <div style={{
@@ -109,8 +106,8 @@ function Asset({ id, width, height, orientation, focus }: any) {
       <img
         src={url}
         alt=""
-        height={h}
-        width={w}
+        height={height}
+        width={width}
         style={{
           display: "block",
           objectFit: "contain",

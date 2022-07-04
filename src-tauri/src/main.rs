@@ -104,8 +104,35 @@ fn image_protocol(
 
     dbg!(&route);
 
-    let blob =
-        nut::services::navigator::get_asset(&pool, &route).expect("failed to get the asset.");
+    let blob = match route.rsplit_once('.') {
+        Some((route, "max")) => {
+            if let Ok(blob) = nut::services::navigator::get_asset(&pool, &route) {
+                blob
+            } else {
+                return response.mimetype("text/plain").status(404).body(Vec::new());
+            }
+        }
+        Some((route, "thumb")) => {
+            if let Ok(blob) = nut::services::navigator::get_thumbnail(&pool, &route) {
+                blob
+            } else {
+                return response.mimetype("text/plain").status(404).body(Vec::new());
+            }
+        }
+
+        Some(_) => {
+            return response
+                .mimetype("text/plain")
+                .status(422)
+                .body("unknown image size".as_bytes().to_vec())
+        }
+        None => {
+            return response
+                .mimetype("text/plain")
+                .status(400)
+                .body("no image size found".as_bytes().to_vec())
+        }
+    };
 
     // if path != "example/test_video.mp4" {
     //   // return error 404 if it's not out video

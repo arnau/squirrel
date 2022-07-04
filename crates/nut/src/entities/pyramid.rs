@@ -55,7 +55,7 @@ impl Pyramid {
         let object = parser::extract(reader)?;
         let blob = match size {
             BlobSize::Max => blob_level(&object, object.len()),
-            BlobSize::Thumbnail => blob_level(&object, 1),
+            BlobSize::Thumbnail => blob_level(&object, 2),
         };
 
         Ok(blob)

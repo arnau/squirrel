@@ -1,4 +1,5 @@
 import { Box, Grid, GridItem, Image, Link, Text } from "@chakra-ui/react"
+import { convertFileSrc } from "@tauri-apps/api/tauri";
 import { MouseEvent } from "react";
 import { Route } from "../aux/route";
 import { File, Location } from "../catalogue/value"
@@ -31,36 +32,54 @@ interface FilePaneProps {
 }
 
 
-function FileItem({ current_route, id, path, asset }: File & { current_route: Route }) {
-  //TODO: ensure asset metadata exists.
-  // console.log(asset)
+function FileItem({ current_route, id, path }: File & { current_route: Route }) {
+  const url = convertFileSrc(`${id}.thumb`, "image")
 
   const selectedColour = path == current_route
-    ? "red"
+    ? "gray.700"
     : "neutral"
 
   return (
-    <Grid
-      templateColumns="80px auto"
-      marginBottom="2px"
+    <Link
+      id={id}
+      onClick={(event: MouseEvent<HTMLElement>) => event.preventDefault()}
+      tabIndex={0}
+      href={path}
+      sx={{
+        fontSize: "sm",
+        display: "block",
+        padding: "0",
+        background: selectedColour,
+        _hover: {
+          background: "gray.500",
+        }
+      }}
     >
-      <GridItem bg="tan">
-        <Box width="80px" height="100px" bg="tomato">
-          loading
-        </Box>
-      </GridItem>
-      <GridItem
-        background={selectedColour}
+      <Grid
+        templateColumns="80px auto"
       >
-        <Link
-          id={id}
-          onClick={(event: MouseEvent<HTMLElement>) => event.preventDefault()}
-          tabIndex={0}
-          href={path}
-        >
+        <GridItem border="1px solid black">
+          <Box width="80px" height="100px" style={{
+            display: "flex",
+          }}>
+            <img
+              src={url}
+              alt=""
+              style={{
+                display: "block",
+                objectFit: "contain",
+                margin: "auto",
+                alignItems: "center",
+                maxWidth: "100%",
+                maxHeight: "100%",
+              }}
+            />
+          </Box>
+        </GridItem>
+        <GridItem border="1px solid black">
           {path}
-        </Link>
-      </GridItem>
-    </Grid>
+        </GridItem>
+      </Grid>
+    </Link>
   )
 }
