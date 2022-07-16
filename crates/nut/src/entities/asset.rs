@@ -14,9 +14,11 @@ pub enum BlobSize {
     Thumbnail,
 }
 
+pub type AssetId = String;
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Asset {
-    pub id: String,
+    pub id: AssetId,
     pub metadata: AssetMetadata,
     pub blob: Blob,
 }
@@ -34,14 +36,14 @@ pub struct AssetMetadata {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AssetRow {
-    pub id: String,
+    pub id: AssetId,
     pub pyramid: Pyramid,
     pub metadata: AssetMetadata,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Thumbnail {
-    pub id: String,
+    pub id: AssetId,
     pub path: String,
     pub blob: Blob,
 }

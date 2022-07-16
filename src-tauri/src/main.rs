@@ -3,6 +3,7 @@
     windows_subsystem = "windows"
 )]
 
+use nut::entities::asset::AssetId;
 use nut::entities::storage::{params, Pool, Storage};
 use nut::services;
 // use std::fs;
@@ -37,6 +38,31 @@ async fn locate(route: String, pool: tauri::State<'_, Pool>) -> Result<nut::Stat
 //     f.read_to_end(&mut data).unwrap();
 //     // base64::encode(data)
 //     data
+// }
+
+#[tauri::command]
+async fn thumbnail(id: AssetId, pool: tauri::State<'_, Pool>) -> Result<String, String> {
+    let data = if let Ok(blob) = nut::services::navigator::get_thumbnail(&pool, &id) {
+        blob.data
+    } else {
+        return Err("failed to retrieve thumbnail".into());
+    };
+
+    Ok(base64::encode(data))
+}
+
+// #[tauri::command]
+// async fn thumbnail(id: AssetId, pool: tauri::State<'_, Pool>) -> Result<String, String> {
+//     dbg!(&route);
+//     let data = if let Ok(blob) = nut::services::navigator::get_async_thumbnail(&pool, &id).await
+//     {
+//         blob.data
+//     } else {
+//         dbg!("ai carai!", &route);
+//         return Err("failed to retrieve thumbnail".into());
+//     };
+//
+//     Ok(base64::encode(data))
 // }
 
 fn edit_menu() -> MenuEntry {
@@ -105,15 +131,15 @@ fn image_protocol(
     dbg!(&route);
 
     let blob = match route.rsplit_once('.') {
-        Some((route, "max")) => {
-            if let Ok(blob) = nut::services::navigator::get_asset(&pool, &route) {
+        Some((id, "max")) => {
+            if let Ok(blob) = nut::services::navigator::get_image(&pool, &id.to_string()) {
                 blob
             } else {
                 return response.mimetype("text/plain").status(404).body(Vec::new());
             }
         }
-        Some((route, "thumb")) => {
-            if let Ok(blob) = nut::services::navigator::get_thumbnail(&pool, &route) {
+        Some((id, "thumb")) => {
+            if let Ok(blob) = nut::services::navigator::get_thumbnail(&pool, &id.to_string()) {
                 blob
             } else {
                 return response.mimetype("text/plain").status(404).body(Vec::new());
@@ -175,7 +201,7 @@ fn main() -> anyhow::Result<()> {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![locate, connect,])
+        .invoke_handler(tauri::generate_handler![locate, connect, thumbnail])
         .menu(Menu::with_items([
             MenuEntry::Submenu(Submenu::new(
                 &ctx.package_info().name,

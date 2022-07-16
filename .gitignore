@@ -1,6 +1,7 @@
 /target
 playground
 **/target/
+squirrel.db*
 
 # Logs
 logs

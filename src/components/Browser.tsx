@@ -1,7 +1,7 @@
 import { FilePane } from "./FilePane"
 import FolderPane from "./FolderPane"
 import LocatorBar from "./LocatorBar"
-import { Catalogue, getFiles, getFolders, getRoots, getLocation, useStore, getCurrentStem } from "../world"
+import { Catalogue, getAssets, getFolders, getRoots, getLocation, useStore, getCurrentStem } from "../world"
 import { Grid, GridItem } from "@chakra-ui/react"
 import { MaximiseButton } from "./ExpandToggle"
 import { MouseEvent } from "react"
@@ -15,7 +15,7 @@ export function Browser() {
   const locate = useStore(state => state.locate)
   const roots = getRoots(world)
   const folders = getFolders(world)
-  const files = getFiles(world)
+  const assets = getAssets(world)
   const location = getLocation(world)
   const stem = getCurrentStem(location)
 
@@ -26,7 +26,6 @@ export function Browser() {
       locate((target as HTMLAnchorElement).pathname)
     }
   }
-
 
   return (
     <Grid
@@ -45,7 +44,7 @@ export function Browser() {
         onClick={handleClick} />
       <FilePane
         location={location}
-        files={files}
+        assets={assets}
         onClick={handleClick}
       />
 
@@ -80,7 +79,7 @@ function AssetPane({ stem }: any) {
       position="relative"
     >
       {
-        stem && stem.kind == "File"
+        stem && stem.kind == "Asset"
           ? <Asset
             id={stem.id}
             height={stem.metadata.height}
@@ -93,7 +92,7 @@ function AssetPane({ stem }: any) {
   )
 }
 
-function Asset({ id, width, height, orientation, focus }: any) {
+function Asset({ id, width, height, focus }: any) {
   const url = convertFileSrc(`${id}.max`, "image")
 
   return (

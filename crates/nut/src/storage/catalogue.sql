@@ -68,6 +68,8 @@ CREATE TABLE IF NOT EXISTS asset (
     width             number NOT NULL,
     height            number NOT NULL,
     orientation       text NOT NULL,
+    -- from Adobe_images.masterImage. signals whether it's a virtual copy
+    master_id         text,
 
     pyramid_uuid      text NOT NULL,
     pyramid_digest    text NOT NULL,

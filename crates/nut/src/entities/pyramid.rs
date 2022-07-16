@@ -60,6 +60,20 @@ impl Pyramid {
 
         Ok(blob)
     }
+
+    pub async fn async_blob(&self, size: BlobSize) -> Result<Blob> {
+        use tokio::fs::File;
+
+        let file = File::open(&self.absolute_path()).await?;
+        let object = parser::extract_xxx(file).await?;
+
+        let blob = match size {
+            BlobSize::Max => blob_level(&object, object.len()),
+            BlobSize::Thumbnail => blob_level(&object, 2),
+        };
+
+        Ok(blob)
+    }
 }
 
 fn blob_level(object: &PyramidObject, level_num: usize) -> Blob {

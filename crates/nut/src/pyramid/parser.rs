@@ -144,3 +144,68 @@ where
 
     Ok(pyramid)
 }
+
+
+pub async fn extract_xxx<R>(mut reader: R) -> anyhow::Result<PyramidObject>
+where
+    R: tokio::io::AsyncReadExt + std::marker::Unpin,
+{
+    let mut blobs: HashMap<String, Vec<u8>> = HashMap::new();
+    let mut header: Option<Header> = None;
+
+    loop {
+        let mut buf = [0; 8];
+
+        match reader.read(&mut buf[..]).await {
+            // end of stream
+            Ok(0) => {
+                break;
+            }
+            Ok(_) => {
+                if &buf[0..4] == MAGIC_LRPREV {
+                    // calculate number of bytes in the current section.
+                    let size = reader.read_u64().await?;
+                    let n = (size as f64 / 8f64).ceil() as u64;
+                    let mut buffer = vec![];
+
+                    // read padding bytes
+                    reader.read(&mut buf[..]).await?;
+
+                    // read label. Either "header" or "level_x".
+                    reader.read(&mut buf[..]).await?;
+
+                    // trim label from padding.
+                    let section = std::string::String::from_utf8_lossy(&buf)
+                        .trim_matches(char::from(0))
+                        .to_string();
+
+                    // collect data from section
+                    for _ in 0..n {
+                        reader.read(&mut buf[..]).await?;
+                        buffer.extend_from_slice(&buf);
+                    }
+
+                    match section.as_ref() {
+                        "header" => {
+                            let metadata = std::string::String::from_utf8_lossy(&buffer);
+                            header = header::decode(&metadata).ok();
+                        }
+                        // level_x where x is a number from 1 to n.
+                        lev => {
+                            dbg!(lev);
+                            blobs.insert(section, buffer);
+                        }
+                    }
+                }
+            }
+            Err(err) => {
+                eprintln!("{:?}", err);
+                break;
+            }
+        }
+    }
+
+    let pyramid = PyramidObject { header, blobs };
+
+    Ok(pyramid)
+}

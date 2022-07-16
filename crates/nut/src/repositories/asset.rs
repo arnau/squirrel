@@ -1,4 +1,4 @@
-use crate::entities::asset::{AssetMetadata, AssetRow};
+use crate::entities::asset::{AssetMetadata, AssetRow, AssetId};
 use crate::entities::storage::{params, Connection, Storage};
 use crate::entities::{Pyramid, Result, Source};
 use crate::repositories::Repository;
@@ -37,7 +37,7 @@ impl<'c, Conn: Deref<Target = Connection>> AssetRepository<'c, Conn> {
         "#;
 
         Storage::get_one(self.0, query, params![entry_id], |row| {
-            let id: String = row.get(0)?;
+            let id: AssetId = row.get(0)?;
             let pyramid_filename: String = row.get(1)?;
             let rating: Option<usize> = row.get(2)?;
             let flag: Option<bool> = row.get(3)?;
@@ -75,7 +75,7 @@ impl<'c, Conn: Deref<Target = Connection>> AssetRepository<'c, Conn> {
         })
     }
 
-    pub fn get_pyramid(&self, entry_id: &str) -> Result<Pyramid> {
+    pub fn get_pyramid(&self, asset_id: &AssetId) -> Result<Pyramid> {
         let query = r#"
         SELECT
             asset.pyramid_filename,
@@ -92,10 +92,10 @@ impl<'c, Conn: Deref<Target = Connection>> AssetRepository<'c, Conn> {
                 source
                 ON source.id = entry.source_id
         WHERE
-            asset.entry_id = ?
+            asset.id = ?
         "#;
 
-        Storage::get_one(self.0, query, params![entry_id], |row| {
+        Storage::get_one(self.0, query, params![asset_id], |row| {
             let pyramid_filename: String = row.get(0)?;
             let source_path: String = row.get(1)?;
             let source_name: String = row.get(2)?;

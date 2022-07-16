@@ -6,7 +6,7 @@ use super::asset::AssetMetadata;
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "kind", rename = "snake_case")]
 pub enum Stem {
-    File {
+    Asset {
         id: String,
         path: String,
         metadata: AssetMetadata,
@@ -20,14 +20,14 @@ pub enum Stem {
 impl Stem {
     pub fn id(&self) -> &str {
         match self {
-            Stem::File { id, .. } => id,
+            Stem::Asset { id, .. } => id,
             Stem::Folder { id, .. } => id,
         }
     }
 
     pub fn path(&self) -> &str {
         match self {
-            Stem::File { path, .. } => path,
+            Stem::Asset { path, .. } => path,
             Stem::Folder { path, .. } => path,
         }
     }
@@ -36,7 +36,7 @@ impl Stem {
 impl fmt::Display for Stem {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Stem::File { path, .. } => write!(f, "{}", path),
+            Stem::Asset { path, .. } => write!(f, "{}", path),
             Stem::Folder { path, .. } => write!(f, "{}", path),
         }
     }

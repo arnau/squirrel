@@ -1,11 +1,26 @@
 import { invoke } from "@tauri-apps/api/tauri"
-import { File, Folder, Value, Location, Stem } from "./catalogue/value"
+import { Asset, Folder, Value, Location, Stem, AssetId } from "./catalogue/value"
 import createStore from "zustand"
 import { Route } from "./aux/route"
 // import createStore, { SetState } from "zustand"
 
+
+export interface Cache {
+  thumbnails: Map<string, string>;
+}
+
+function createCache() {
+  return {
+    thumbnails: new Map()
+  }
+}
+
 export interface Store {
   world: World;
+  cache: Cache;
+
+  fetchThumbnail: (id: AssetId) => void;
+
   locate: (route: Route) => void;
   setRoute: (route: Route) => void;
   getRoute: () => Route | null;
@@ -17,11 +32,45 @@ export interface Store {
 export const useStore = createStore<Store>((set, get) => ({
   // The world starts in the Void.
   world: { id: "void" },
+  cache: createCache(),
+
+  fetchThumbnail: async (id: AssetId) => {
+    try {
+      const data = get().cache.thumbnails.get(id)
+      if (data) { return }
+
+      const value: string = await invoke("thumbnail", { id })
+
+      set(state => {
+        const { thumbnails } = state.cache
+
+        thumbnails.set(id, value)
+
+        return ({ cache: { ...state.cache, thumbnails } })
+      })
+
+    } catch (error) {
+      console.error(error)
+    }
+  },
 
   // Catalogue Actions
   locate: async (route: Route) => {
     try {
       const value: Value = await invoke("locate", { route })
+
+      console.log(value.assets.length)
+      let setx = new Set()
+
+      for (const x of value.assets) {
+        if (setx.has(x.id)) {
+          console.log(value.assets.filter(e => e.id == x.id))
+          console.log("----")
+        }
+        setx.add(x.id)
+      }
+
+      console.log(setx.size)
 
       set(state => ({ world: updateCatalogue(value, state.world) }))
     } catch (error) {
@@ -174,10 +223,10 @@ export function getFolders(catalogue: Catalogue): Array<Folder> {
   return folders
 }
 
-export function getFiles(catalogue: Catalogue): Array<File> {
-  const { files } = catalogue.current
+export function getAssets(catalogue: Catalogue): Array<Asset> {
+  const { assets } = catalogue.current
 
-  return files
+  return assets
 }
 
 

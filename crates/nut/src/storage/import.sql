@@ -82,6 +82,9 @@ SELECT
     image.fileWidth AS width,
     image.fileHeight AS height,
     image.orientation AS orientation,
+    (
+        select i.id_global from catalogue.Adobe_images AS i where image.masterImage = i.id_local
+    ) AS master_id,
     cache.uuid AS pyramid_uuid,
     cache.digest AS pyramid_digest,
     strftime('%Y-%m-%dT%H:%M:%SZ',

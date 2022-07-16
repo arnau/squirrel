@@ -1,4 +1,4 @@
-use super::location::Location;
+use super::{location::Location, asset::{AssetMetadata, AssetId}};
 use serde::{Deserialize, Serialize};
 
 /// Represents the UI state for a given location.
@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 ///     location: vec![], // empty
 ///     roots: vec![...], // all roots
 ///     folders: vec![], // empty
-///     thumbnails: vec![], // empty
+///     assets: vec![], // empty
 /// }
 /// ```
 ///
@@ -22,7 +22,7 @@ use serde::{Deserialize, Serialize};
 ///     location: vec![Stem::Folder { id: "xxx", path: "/2021/" }], // empty
 ///     roots: vec!["/2021/", "/2022/"], // all roots
 ///     folders: vec![], // empty
-///     thumbnails: vec![], // empty
+///     assets: vec![], // empty
 /// }
 /// ```
 #[derive(Debug, Serialize, Deserialize)]
@@ -36,11 +36,8 @@ pub enum State {
         roots: Vec<Folder>,
         // The folders hanging from the location root.
         folders: Vec<Folder>,
-        // The files under the selected folder
-        //
-        // Thumbnails are retrieved when needed as files can be of the hunderds or small
-        // thousands.
-        files: Vec<File>,
+        // The assets under the selected folder. Thumbnails are retrieved independently.
+        assets: Vec<File>,
     },
 
     /// A state for the config.
@@ -53,8 +50,14 @@ pub struct Folder {
     pub path: String,
 }
 
+// TODO: Rename to Asset or similar
 #[derive(Debug, Serialize, Deserialize)]
 pub struct File {
-    pub id: String,
-    pub path: String,
+    pub id: AssetId,
+    // TODO: path and master_id are mutually exclussive. Avoid representing impossible states.
+    // Must be the file path. None if the asset is a copy.
+    pub path: Option<String>,
+    // If the asset is a copy, this should be the AssetId of the original.
+    pub master_id: Option<AssetId>,
+    pub metadata: AssetMetadata,
 }

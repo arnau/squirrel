@@ -34,7 +34,7 @@ impl Location {
         let len = self.stems.len();
         if let Some(current) = self.stems.last() {
             match current {
-                Stem::File { .. } => {
+                Stem::Asset { .. } => {
                     match len {
                         // Files cannot exist alone.
                         0..=1 => unreachable!(),

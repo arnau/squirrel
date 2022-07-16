@@ -281,6 +281,7 @@ impl ImportRepository {
                 width,
                 height,
                 orientation,
+                master_id,
                 pyramid_uuid,
                 pyramid_digest,
                 modification_time

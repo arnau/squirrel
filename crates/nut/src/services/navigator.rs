@@ -1,4 +1,4 @@
-use crate::entities::asset::{Blob, BlobSize};
+use crate::entities::asset::{Blob, BlobSize, AssetId};
 use crate::entities::entry::Kind;
 use crate::entities::location::Location;
 use crate::entities::state::{File, Folder};
@@ -50,13 +50,13 @@ where
     let state_repo = StateRepository(conn);
 
     let roots = state_repo.get_roots()?;
-    let (folders, files) = get_descendants(conn, location.ancestor())?;
+    let (folders, assets) = get_descendants(conn, location.ancestor())?;
 
     let state = State::Catalogue {
         location,
         roots,
         folders,
-        files,
+        assets,
     };
     Ok(state)
 }
@@ -75,8 +75,9 @@ where
             Kind::File => {
                 let asset_row = asset_repo.get_for(&id)?;
                 let metadata = asset_row.metadata;
+                let id = asset_row.id;
 
-                Stem::File { id, path, metadata }
+                Stem::Asset { id, path, metadata }
             }
         };
 
@@ -93,24 +94,22 @@ where
     C: Deref<Target = Connection>,
 {
     let state_repo = StateRepository(conn);
-    let folders = if let Some(ancestor) = ancestor {
-        state_repo.get_folders(ancestor.id())?
+    let data = if let Some(ancestor) = ancestor {
+        (
+            state_repo.get_folders(ancestor.id())?,
+            state_repo.get_assets(ancestor.id())?,
+        )
     } else {
-        vec![]
-    };
-    let files = if let Some(ancerstor) = ancestor {
-        state_repo.get_files(ancerstor.id())?
-    } else {
-        vec![]
+        (vec![], vec![])
     };
 
-    Ok((folders, files))
+    Ok(data)
 }
 
 /// Get the thumbnail for the given file.
 ///
 /// This is not strictly navigatgion so might be best to move it to another service.
-pub fn get_thumbnail(pool: &Pool, id: &str) -> Result<Blob> {
+pub fn get_thumbnail(pool: &Pool, id: &AssetId) -> Result<Blob> {
     let conn = pool.get()?;
     let pyramid = AssetRepository(&conn).get_pyramid(id)?;
     let blob = pyramid.blob(BlobSize::Thumbnail)?;
@@ -118,7 +117,17 @@ pub fn get_thumbnail(pool: &Pool, id: &str) -> Result<Blob> {
     Ok(blob)
 }
 
-pub fn get_asset(pool: &Pool, id: &str) -> Result<Blob> {
+pub async fn get_async_thumbnail(pool: &Pool, id: &AssetId) -> Result<Blob> {
+    let conn = pool.get()?;
+    let pyramid = AssetRepository(&conn).get_pyramid(id)?;
+    let blob = pyramid.async_blob(BlobSize::Thumbnail).await?;
+
+    Ok(blob)
+}
+
+// TODO: Rename to Image to use Asset for what before was File.
+// FIX: Incoming id should be the AssetId, but currenlty is the EntryId.
+pub fn get_image(pool: &Pool, id: &AssetId) -> Result<Blob> {
     let conn = pool.get()?;
     let pyramid = AssetRepository(&conn).get_pyramid(id)?;
     let blob = pyramid.blob(BlobSize::Max)?;
