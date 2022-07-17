@@ -1,7 +1,7 @@
-use crate::entities::asset::{Blob, BlobSize, AssetId};
+use crate::entities::asset::{AssetId, Blob, BlobSize};
 use crate::entities::entry::Kind;
 use crate::entities::location::Location;
-use crate::entities::state::{File, Folder};
+use crate::entities::state::{Asset, Folder};
 use crate::entities::stem::{Stem, StemRow};
 use crate::entities::storage::{Connection, Pool};
 use crate::entities::{Event, Result, State};
@@ -65,6 +65,45 @@ fn get_location<C>(conn: &C, path: &str) -> Result<Location>
 where
     C: Deref<Target = Connection>,
 {
+    if let Some((path, asset_id)) = path.rsplit_once('#') {
+        get_copy_location(conn, path, &asset_id.to_string())
+    } else {
+        let stem_rows = StemRepository::get(conn, path)?;
+
+        let asset_repo = AssetRepository(conn);
+        let mut stems = vec![];
+
+        for StemRow { id, path, kind } in stem_rows {
+            let stem = match kind {
+                Kind::Folder => Stem::Folder { id, path },
+                Kind::File => {
+                    let asset_row = asset_repo.get_for(&id)?;
+                    let metadata = asset_row.metadata;
+                    let id = asset_row.id;
+                    let master_id = asset_row.master_id;
+
+                    Stem::Asset {
+                        id,
+                        path,
+                        master_id,
+                        metadata,
+                    }
+                }
+            };
+
+            stems.push(stem);
+        }
+
+        let location = Location::new(stems);
+
+        Ok(location)
+    }
+}
+
+fn get_copy_location<C>(conn: &C, path: &str, asset_id: &AssetId) -> Result<Location>
+where
+    C: Deref<Target = Connection>,
+{
     let stem_rows = StemRepository::get(conn, path)?;
     let asset_repo = AssetRepository(conn);
     let mut stems = vec![];
@@ -73,11 +112,19 @@ where
         let stem = match kind {
             Kind::Folder => Stem::Folder { id, path },
             Kind::File => {
-                let asset_row = asset_repo.get_for(&id)?;
+                let asset_row = asset_repo.get(asset_id)?;
+
                 let metadata = asset_row.metadata;
                 let id = asset_row.id;
+                let master_id = asset_row.master_id;
+                let path = format!("{}#{}", path, asset_id);
 
-                Stem::Asset { id, path, metadata }
+                Stem::Asset {
+                    id,
+                    path,
+                    master_id,
+                    metadata,
+                }
             }
         };
 
@@ -89,7 +136,7 @@ where
     Ok(location)
 }
 
-fn get_descendants<C>(conn: &C, ancestor: Option<&Stem>) -> Result<(Vec<Folder>, Vec<File>)>
+fn get_descendants<C>(conn: &C, ancestor: Option<&Stem>) -> Result<(Vec<Folder>, Vec<Asset>)>
 where
     C: Deref<Target = Connection>,
 {

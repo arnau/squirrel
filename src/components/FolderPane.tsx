@@ -7,30 +7,23 @@ import { lastSegment, Route } from "../aux/route"
 export default function FolderPane({ location, roots, folders, onClick }: FolderPaneProps) {
   const currentRoot = location.stems[0]
 
-  // It's /
-  if (currentRoot == undefined) {
-    return (
-      <GridItem
-        colSpan={1}
-        rowSpan={5}
-        bg="neutral"
-        overflowY="auto"
-        onClick={onClick}
-      >
-        {
-          roots.map(root => <Root key={root.id} {...root} />)
-        }
-      </GridItem>
-    )
-  }
-
   return (
-    <GridItem colSpan={1} rowSpan={5} bg="neutral" overflowY="auto" onClick={onClick}>
+    <GridItem
+      colSpan={1}
+      rowSpan={5}
+      bg="neutral"
+      overflowY="auto"
+      onClick={onClick}
+    >
       {
-        roots.map(root =>
-          root.id == currentRoot.id
-            ? <CurrentRoot key={root.id} folders={folders} {...root} />
-            : <Root key={root.id} {...root} />)
+        // It's /
+        currentRoot === undefined
+          ? roots.map(root => <Root key={root.id} {...root} />)
+          : roots.map(root =>
+            root.id == currentRoot.id
+              ? <CurrentRoot key={root.id} folders={folders} {...root} />
+              : <Root key={root.id} {...root} />)
+
       }
     </GridItem>
   )

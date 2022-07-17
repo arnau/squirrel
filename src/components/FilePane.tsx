@@ -1,18 +1,17 @@
-import { Box, Grid, GridItem, Image, Link, Text } from "@chakra-ui/react"
-import { MouseEvent } from "react"
+import { Badge, Box, Grid, GridItem, Link, Text } from "@chakra-ui/react"
+import { MouseEvent, ReactNode } from "react"
 import { Route } from "../aux/route"
 import { Asset, Location } from "../catalogue/value"
 import { useStore } from "../world"
 
 
-export function FilePane({ location, assets, onClick }: FilePaneProps) {
+export function ThumbPane({ location, assets }: ThumbPaneProps) {
   return (
     <GridItem
-      colSpan={2}
+      colSpan={1}
       rowSpan={5}
       background="neutral"
       overflowY="auto"
-      onClick={onClick}
     >
       {
         assets.length > 0
@@ -24,33 +23,41 @@ export function FilePane({ location, assets, onClick }: FilePaneProps) {
   )
 }
 
-interface FilePaneProps {
+interface ThumbPaneProps {
   location: Location;
   assets: Array<Asset>;
-  onClick: (event: MouseEvent<HTMLElement>) => void;
+}
+
+function dataUrl(data: string | undefined): string {
+  return data === undefined
+    ? ''
+    : `data:image/jpeg;base64,${data}`
+}
+
+function takeStem(path: string): string {
+  const stems = path.split("/")
+
+  return stems[stems.length - 1]
 }
 
 
-function AssetItem({ current_route, id, path, metadata }: Asset & { current_route: Route }) {
+function AssetItem({ current_route, id, path, master_id, metadata }: Asset & { current_route: Route }) {
   const fetchThumbnail = useStore(state => state.fetchThumbnail)
   const data = useStore(state => state.cache.thumbnails.get(id))
+  const stem = takeStem(path)
+
+  const route = master_id
+    ? `${path}#${id}`
+    : path
 
   fetchThumbnail(id)
 
-  const url = data === undefined
-    ? ''
-    : `data:image/jpeg;base64,${data}`
+  const url = dataUrl(data)
 
-  const selectedColour = path == current_route
+  const selectedColour = route == current_route
     ? "gray.700"
     : "neutral"
   const locate = useStore(state => state.locate)
-
-  const cellStyles = {
-    borderColor: "gray.800",
-    borderWidth: "0 0 3px 3px",
-    borderStyle: "solid",
-  }
 
   return (
     <Link
@@ -61,13 +68,12 @@ function AssetItem({ current_route, id, path, metadata }: Asset & { current_rout
 
         const target = event.currentTarget as HTMLAnchorElement
 
-        locate(target.pathname)
-
+        locate(target.getAttribute("href")!)
       }}
       tabIndex={0}
-      href={path}
+      href={route}
       sx={{
-        fontSize: "sm",
+        fontSize: "xs",
         display: "block",
         padding: "0",
         background: selectedColour,
@@ -77,18 +83,38 @@ function AssetItem({ current_route, id, path, metadata }: Asset & { current_rout
       }}
     >
       <Grid
-        templateColumns="80px repeat(1, 1fr)"
+        templateColumns="120px repeat(1, 1fr) repeat(1, 2fr)"
         templateRows="repeat(4, 1fr)"
       >
-        <GridItem sx={{
-          borderColor: "gray.800",
-          borderWidth: "0 0 3px 0",
-          borderStyle: "solid",
-        }}
-        rowSpan={5}
+        <GridItem
+          sx={{
+            borderColor: "gray.800",
+            borderWidth: "0 0 1px 0",
+            borderStyle: "solid",
+            padding: "4px",
+          }}
+          colSpan={3}
+          rowSpan={1}
         >
-          <Box width="80px" height="100px" style={{
+          {
+            master_id
+              ? <><Badge colorScheme="gray">Virtual</Badge> {stem}</>
+              : stem
+          }
+        </GridItem>
+        <GridItem
+          sx={{
+            borderColor: "gray.800",
+            borderWidth: "0 0 3px 0",
+            borderStyle: "solid",
+          }}
+          rowSpan={5}
+        >
+          <Box sx={{
             display: "flex",
+            padding: "6px",
+            width: "100%",
+            height: "100%",
           }}>
             <img
               src={url}
@@ -99,28 +125,47 @@ function AssetItem({ current_route, id, path, metadata }: Asset & { current_rout
                 margin: "auto",
                 alignItems: "center",
                 maxWidth: "100%",
-                maxHeight: "100%",
+                maxHeight: "120px",
               }}
             />
           </Box>
         </GridItem>
-        <GridItem sx={cellStyles}>
-          {metadata.format}
-        </GridItem>
-        <GridItem sx={cellStyles}>
-          {metadata.rating}
-        </GridItem>
-        <GridItem sx={cellStyles}>
-          {JSON.stringify(metadata.flag)}
-        </GridItem>
-        <GridItem sx={cellStyles}>
-          {metadata.label}
-        </GridItem>
-        <GridItem sx={cellStyles}>
-          {`${metadata.width} x ${metadata.height}`}
-        </GridItem>
 
+        <Metapoint label="Format">{metadata.format}</Metapoint>
+        <Metapoint label="Stars">{metadata.rating}</Metapoint>
+        <Metapoint label="Flagged">{metadata.flag ? "Yes" : "No"}</Metapoint>
+        <Metapoint label="Colour">{metadata.label}</Metapoint>
+        <Metapoint label="Size" className="last">{`${metadata.width} x ${metadata.height}`}</Metapoint>
       </Grid>
     </Link>
+  )
+}
+
+interface MetapointProps {
+  label: string;
+  className?: string;
+  children: ReactNode;
+}
+
+function Metapoint({ label, className, children }: MetapointProps) {
+  const width = className === "last"
+    ? '3px'
+    : '1px'
+  const cellStyles = {
+    borderColor: "gray.800",
+    borderWidth: `0 0 ${width} 1px`,
+    borderStyle: "solid",
+    padding: "4px",
+  }
+
+  return (
+    <>
+      <GridItem sx={cellStyles}>
+        {label}
+      </GridItem>
+      <GridItem sx={cellStyles}>
+        {children}
+      </GridItem>
+    </>
   )
 }

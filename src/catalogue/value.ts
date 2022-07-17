@@ -43,7 +43,13 @@ export interface Asset {
   kind: "Asset";
   id: AssetId;
   path: Route;
+  master_id: AssetId | null;
   metadata: AssetMetadata;
+}
+
+export interface Reference {
+  kind: "Path" | "OriginalId";
+  value: string;
 }
 
 export interface Folder {

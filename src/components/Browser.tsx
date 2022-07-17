@@ -1,4 +1,4 @@
-import { FilePane } from "./FilePane"
+import { ThumbPane } from "./FilePane"
 import FolderPane from "./FolderPane"
 import LocatorBar from "./LocatorBar"
 import { Catalogue, getAssets, getFolders, getRoots, getLocation, useStore, getCurrentStem } from "../world"
@@ -31,7 +31,7 @@ export function Browser() {
     <Grid
       gap={1}
       templateRows="50px repeat(5, 1fr)"
-      templateColumns="repeat(6, 1fr)"
+      templateColumns="240px 300px minmax(600px, 1fr)"
       height="100vh"
       bg="gray.800"
       minWidth={900}
@@ -42,14 +42,12 @@ export function Browser() {
         roots={roots}
         folders={folders}
         onClick={handleClick} />
-      <FilePane
+      <ThumbPane
         location={location}
         assets={assets}
-        onClick={handleClick}
       />
 
       <AssetPane stem={stem} />
-      <AssetDetailsPane />
     </Grid>
   )
 }
@@ -57,7 +55,7 @@ export function Browser() {
 function LocatorPane() {
   return (
     <GridItem
-      colSpan={6}
+      colSpan={3}
       rowSpan={1}
       bg="grey.700"
       padding="8px 16px"
@@ -73,8 +71,8 @@ function AssetPane({ stem }: any) {
 
   return (
     <GridItem
-      colSpan={3}
-      rowSpan={4}
+      colSpan={1}
+      rowSpan={5}
       bg="neutral"
       position="relative"
     >
@@ -119,12 +117,5 @@ function Asset({ id, width, height, focus }: any) {
         }}
       />
     </div>
-  )
-}
-
-function AssetDetailsPane() {
-  return (
-    <GridItem colSpan={3} rowSpan={1} bg="neutral">
-    </GridItem>
   )
 }

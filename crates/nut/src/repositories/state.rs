@@ -1,5 +1,5 @@
 use crate::entities::asset::AssetMetadata;
-use crate::entities::state::{File, Folder};
+use crate::entities::state::{Asset, Folder};
 use crate::entities::storage::{params, Connection, Storage};
 use crate::entities::Result;
 use crate::repositories::Repository;
@@ -50,7 +50,7 @@ impl<'c, Conn: Deref<Target = Connection>> StateRepository<'c, Conn> {
         })
     }
 
-    pub fn get_assets(&self, parent_id: &str) -> Result<Vec<File>> {
+    pub fn get_assets(&self, parent_id: &str) -> Result<Vec<Asset>> {
         let query = r#"
         SELECT
             asset.id,
@@ -94,14 +94,8 @@ impl<'c, Conn: Deref<Target = Connection>> StateRepository<'c, Conn> {
                 height,
                 orientation,
             };
-            // If master_id exists, path must not exist because it's a copy.
-            let path = if master_id.is_none() {
-                Some(path)
-            } else {
-                None
-            };
 
-            Ok(File {
+            Ok(Asset {
                 id,
                 path,
                 master_id,

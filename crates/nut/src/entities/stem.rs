@@ -1,14 +1,15 @@
 use crate::entities::entry::Kind;
 use serde::{Deserialize, Serialize};
 use std::fmt;
-use super::asset::AssetMetadata;
+use super::asset::{AssetMetadata, AssetId};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "kind", rename = "snake_case")]
 pub enum Stem {
     Asset {
-        id: String,
+        id: AssetId,
         path: String,
+        master_id: Option<AssetId>,
         metadata: AssetMetadata,
     },
     Folder {

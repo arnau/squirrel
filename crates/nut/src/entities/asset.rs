@@ -37,6 +37,7 @@ pub struct AssetMetadata {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AssetRow {
     pub id: AssetId,
+    pub master_id: Option<AssetId>,
     pub pyramid: Pyramid,
     pub metadata: AssetMetadata,
 }

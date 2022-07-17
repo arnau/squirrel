@@ -44,6 +44,12 @@ export const useStore = createStore<Store>((set, get) => ({
       set(state => {
         const { thumbnails } = state.cache
 
+        // Flush cache if it reaches the max cache capacity.
+        const MAX_CACHE_SIZE = 2000
+        if (thumbnails.size >= MAX_CACHE_SIZE) {
+          thumbnails.clear()
+        }
+
         thumbnails.set(id, value)
 
         return ({ cache: { ...state.cache, thumbnails } })
