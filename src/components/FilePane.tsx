@@ -1,6 +1,7 @@
 import { Badge, Box, Grid, GridItem, Link, Text } from "@chakra-ui/react"
-import { MouseEvent, ReactNode } from "react"
+import { MouseEvent, ReactNode, useRef } from "react"
 import { Route } from "../aux/route"
+import { useIntersection } from "../aux/useIntersection"
 import { Asset, Location } from "../catalogue/value"
 import { useStore } from "../world"
 
@@ -15,7 +16,7 @@ export function ThumbPane({ location, assets }: ThumbPaneProps) {
     >
       {
         assets.length > 0
-          ? assets.slice(0, 11).map(asset =>
+          ? assets.map(asset =>
             <AssetItem key={asset.id} current_route={location.path} {...asset} />)
           : <Text>(empty)</Text>
       }
@@ -41,16 +42,25 @@ function takeStem(path: string): string {
 }
 
 
-function AssetItem({ current_route, id, path, master_id, metadata }: Asset & { current_route: Route }) {
+type AssetItemProps = Asset & { current_route: Route }
+function AssetItem({ current_route, id, path, master_id, metadata }: AssetItemProps) {
   const fetchThumbnail = useStore(state => state.fetchThumbnail)
   const data = useStore(state => state.cache.thumbnails.get(id))
   const stem = takeStem(path)
 
+  // Virtual assets are identified as a combination of the original asset path
+  // and the virtual asset copy.
+  // An original asset is identified just with the asset path.
   const route = master_id
     ? `${path}#${id}`
     : path
 
-  fetchThumbnail(id)
+  const elementRef = useRef<HTMLAnchorElement | null>()
+  const isVisible = useIntersection(elementRef, '0px')
+
+  if (isVisible) {
+    fetchThumbnail(id)
+  }
 
   const url = dataUrl(data)
 
@@ -61,6 +71,7 @@ function AssetItem({ current_route, id, path, master_id, metadata }: Asset & { c
 
   return (
     <Link
+      ref={el => elementRef.current = el}
       id={id}
       onClick={(event: MouseEvent<HTMLElement>) => {
         event.preventDefault()
@@ -98,7 +109,7 @@ function AssetItem({ current_route, id, path, master_id, metadata }: Asset & { c
         >
           {
             master_id
-              ? <><Badge colorScheme="gray">Virtual</Badge> {stem}</>
+              ? <><Badge colorScheme="black">Virtual</Badge> {stem}</>
               : stem
           }
         </GridItem>
