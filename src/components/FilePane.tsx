@@ -17,7 +17,11 @@ export function ThumbPane({ location, assets }: ThumbPaneProps) {
       {
         assets.length > 0
           ? assets.map(asset =>
-            <AssetItem key={asset.id} current_route={location.path} {...asset} />)
+            <AssetItem
+              key={asset.id}
+              current_route={location.path}
+              {...asset} />
+          )
           : <Text>(empty)</Text>
       }
     </GridItem>
@@ -28,6 +32,11 @@ interface ThumbPaneProps {
   location: Location;
   assets: Array<Asset>;
 }
+
+
+
+
+const dummy = `data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAQDAwQDAwQEAwQFBAQFBgoHBgYGBg0JCggKDw0QEA8NDw4RExgUERIXEg4PFRwVFxkZGxsbEBQdHx0aHxgaGxr/2wBDAQQFBQYFBgwHBwwaEQ8RGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhr/wAARCAB4AHgDASIAAhEBAxEB/8QAGAABAQEBAQAAAAAAAAAAAAAAAAUGAQP/xAAqEAEAAAQFBAMAAQUAAAAAAAAAAgMzcgQ2dbPjAQW0tRIxQvARFjSEkf/EABQBAQAAAAAAAAAAAAAAAAAAAAD/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwDP4nETOwT5s/FTI5/Z5sUUcyOOL5dcFFF9xRdf1J2rKVoQcq6B6/g2rKQXgAAAAAAAAAAQc1aB7Dg3bKoemGxEzv8APlT8LMjkdnlRQxy44Ivj1xsUP1FD1/MndsqloAABByroHr+DaspXhByroHr+DaspBeAAAAAABBzVoHsODdsqgzVoHsODdsq3gAAAAAABByroHr+DaspXhByroHr+DaspBeAABBzVoHsODdsqgzVoHsODdsq3gAAAAAAAAAABByroHr+DaspXhgf+f2B/T+f6X8/xwaDNWgew4N2yreAAAAAAAAAAAAEDNWgefwbtlUO5q0D2HBu2VbwAg5V0D1/BtWUrwgZV0DwODaspBfAAAAAAAABAzVoHn8G7ZVBmrQPP4N2yrfAAAAAEDKugeBwbVlK+IGVdA8Dg2rKQXwAAAAQM1aB5/Bu2VQZq0Dz+Ddsq3wAAAAAAAABAyroHgcG1ZSviBlXQPA4NqykF8AETEyJnf582RipcyR2eVFFBMgjh+PXGxQ/cMXT8yd2yrbAAAAAAAAAAAAAETDSJnYJ8qRhZcyf2ebFDBLggh+XXBRRfUMPT9SdqykAH/9k=`
 
 function dataUrl(data: string | undefined): string {
   return data === undefined

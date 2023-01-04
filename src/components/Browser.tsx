@@ -1,4 +1,4 @@
-import { ThumbPane } from "./FilePane"
+import { ThumbPane } from "./ThumbPane"
 import FolderPane from "./FolderPane"
 import LocatorBar from "./LocatorBar"
 import { Catalogue, getAssets, getFolders, getRoots, getLocation, useStore, getCurrentStem } from "../world"

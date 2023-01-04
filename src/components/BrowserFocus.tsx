@@ -41,8 +41,6 @@ function Asset({ id, width, height, orientation, blur }: any) {
   const url = convertFileSrc(`${id}.max`, "image")
   const [w, h] = orientation == "AB" ? [width, height] : [height, width]
 
-  console.log(orientation, w, h)
-
   return (
     <div style={{
       overflow: "auto",

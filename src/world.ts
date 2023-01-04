@@ -65,19 +65,6 @@ export const useStore = createStore<Store>((set, get) => ({
     try {
       const value: Value = await invoke("locate", { route })
 
-      console.log(value.assets.length)
-      let setx = new Set()
-
-      for (const x of value.assets) {
-        if (setx.has(x.id)) {
-          console.log(value.assets.filter(e => e.id == x.id))
-          console.log("----")
-        }
-        setx.add(x.id)
-      }
-
-      console.log(setx.size)
-
       set(state => ({ world: updateCatalogue(value, state.world) }))
     } catch (error) {
       console.error(error)

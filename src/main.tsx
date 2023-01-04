@@ -10,13 +10,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   console.info("loading complete")
 
   ReactDOM.createRoot(document.getElementById('root')!).render(
-    <React.StrictMode>
+    // <React.StrictMode>
       <ChakraProvider theme={theme}>
         <CSSReset />
         <App />
       </ChakraProvider>
-    </React.StrictMode>
+    // </React.StrictMode>
   )
 })
-
-

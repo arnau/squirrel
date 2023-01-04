@@ -3,6 +3,7 @@
     windows_subsystem = "windows"
 )]
 
+use anyhow::bail;
 use nut::entities::asset::AssetId;
 use nut::entities::storage::{params, Pool, Storage};
 use nut::services;
@@ -122,13 +123,11 @@ fn image_protocol(
     let mut response = tauri::http::ResponseBuilder::new();
     let route = request
         .uri()
-        .strip_prefix("image://")
-        .expect("failed to remove image:// from the URI.");
+        .strip_prefix("image://localhost/")
+        .expect("failed to remove image://localhost/ from the URI.");
     let route = percent_encoding::percent_decode(route.as_bytes())
         .decode_utf8_lossy()
         .to_string();
-
-    dbg!(&route);
 
     let blob = match route.rsplit_once('.') {
         Some((id, "max")) => {
@@ -181,7 +180,8 @@ fn image_protocol(
 fn main() -> anyhow::Result<()> {
     let ctx = tauri::generate_context!();
     // TODO: resolve the db path with dirs.
-    let pool = services::starter::start("../squirrel.db")?;
+    let db_location = "/Users/arnau/Library/ApplicationSupport/net.seachess.squirrel/squirrel.db";
+    let pool = services::starter::start(db_location)?;
 
     let app = tauri::Builder::default()
         // .manage(Storagex {
