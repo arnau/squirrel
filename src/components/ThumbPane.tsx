@@ -1,23 +1,9 @@
 import { Badge, Box, Grid, GridItem, Link, Text } from "@chakra-ui/react"
-import { MouseEvent, Profiler, ReactNode, useRef } from "react"
+import { MouseEvent, ReactNode, useRef } from "react"
 import { lastSegment, Route } from "../aux/route"
 import { useIntersection } from "../aux/useIntersection"
 import { Asset, AssetId, AssetMetadata, Location } from "../catalogue/value"
 import { useStore } from "../world"
-
-function callback(
-  id: string, // the "id" prop of the Profiler tree that has just committed
-  phase: string, // either "mount" (if the tree just mounted) or "update" (if it re-rendered)
-  actualDuration: number, // time spent rendering the committed update
-  baseDuration: number, // estimated time to render the entire subtree without memoization
-  _startTime: number, // when React began rendering this update
-  _commitTime: number, // when React committed this update
-  _interactions: Set<any> // the Set of interactions belonging to this update
-) {
-  // Aggregate or log render timings...
-  console.log(id, phase, actualDuration, baseDuration)
-}
-
 
 
 interface ThumbPaneProps {
@@ -25,38 +11,35 @@ interface ThumbPaneProps {
   assets: Array<Asset>;
 }
 export function ThumbPane({ location, assets }: ThumbPaneProps) {
-  // const head = assets.slice(0, 10)
-  // const tail = assets.slice(10, -1)
+  // TODO: Instead of effect it should run after a folder click event.
+  // const elementRef = useRef<HTMLDivElement | null | undefined>()
+  // useEffect(() => {
+  //   if (elementRef !== null && elementRef !== undefined) {
+  //     elementRef.current!.scrollTo({
+  //       top: 0,
+  //       behavior: 'smooth',
+  //     })
+  //   }
+  // }, [])
+
 
   return (
-    <Profiler id="thumbpane" onRender={callback}>
-      <GridItem
-        colSpan={1}
-        rowSpan={5}
-        background="neutral"
-        overflowY="auto"
-      >
-        {
-          assets.length == 0
-            ? <Text
+    <GridItem
+      colSpan={1}
+      rowSpan={5}
+      background="neutral"
+      overflowY="auto"
+    // ref={el => elementRef.current = el}
+    >
+      {
+        assets.length == 0
+          ? <Text
             marginTop={2}
             textAlign="center"
-            >(folder empty)</Text>
-            : <Records list={assets} current_route={location.path} />
-        }
-        {
-          //head.length == 0
-          //  ? <Text>(empty)</Text>
-          //  : <Records list={head} current_route={location.path} />
-        }
-
-        {
-          // tail.length == 0
-          //   ? null
-          //   : <Records list={tail} current_route={location.path} />
-        }
-      </GridItem>
-    </Profiler>
+          >(folder empty)</Text>
+          : <Records list={assets} current_route={location.path} />
+      }
+    </GridItem>
   )
 }
 
@@ -80,8 +63,6 @@ function Records({ list, current_route }: RecordsProps) {
 }
 
 
-
-
 type AssetItemProps = Asset & { current_route: Route }
 function AssetItem({ current_route, id, path, master_id, metadata }: AssetItemProps) {
   const stem = lastSegment(path)
@@ -100,19 +81,20 @@ function AssetItem({ current_route, id, path, master_id, metadata }: AssetItemPr
     ? "gray.700"
     : "neutral"
   const locate = useStore(state => state.locate)
+  const handleClick = (event: MouseEvent<HTMLElement>) => {
+    event.preventDefault()
+    event.stopPropagation()
+
+    const target = event.currentTarget as HTMLAnchorElement
+
+    locate(target.getAttribute("href")!)
+  }
 
   return (
     <Link
       ref={el => elementRef.current = el}
       id={id}
-      onClick={(event: MouseEvent<HTMLElement>) => {
-        event.preventDefault()
-        event.stopPropagation()
-
-        const target = event.currentTarget as HTMLAnchorElement
-
-        locate(target.getAttribute("href")!)
-      }}
+      onClick={handleClick}
       // tabIndex={0}
       href={route}
       sx={{
@@ -148,27 +130,25 @@ interface DetailsProps {
 
 function Details({ id, stem, metadata, isVirtual, isVisible }: DetailsProps) {
   return (
-    <Profiler id="details" onRender={callback}>
-      <Grid
-        templateColumns="120px repeat(1, 1fr) repeat(1, 2fr)"
-        templateRows="repeat(4, 1fr)"
-      >
-        <Title>
-          {
-            isVirtual
-              ? <><Badge colorScheme="black">Virtual</Badge> {stem}</>
-              : stem
-          }
-        </Title>
-        <Thumbnail id={id} isVisible={isVisible} />
+    <Grid
+      templateColumns="120px repeat(1, 1fr) repeat(1, 2fr)"
+      templateRows="repeat(4, 1fr)"
+    >
+      <Title>
+        {
+          isVirtual
+            ? <><Badge colorScheme="black">Virtual</Badge> {stem}</>
+            : stem
+        }
+      </Title>
+      <Thumbnail id={id} isVisible={isVisible} />
 
-        <Metapoint label="Format">{metadata.format}</Metapoint>
-        <Metapoint label="Stars">{metadata.rating}</Metapoint>
-        <Metapoint label="Flagged">{metadata.flag ? "Yes" : "No"}</Metapoint>
-        <Metapoint label="Colour">{metadata.label}</Metapoint>
-        <Metapoint label="Size" className="last">{`${metadata.width} x ${metadata.height}`}</Metapoint>
-      </Grid>
-    </Profiler>
+      <Metapoint label="Format">{metadata.format}</Metapoint>
+      <Metapoint label="Stars">{metadata.rating}</Metapoint>
+      <Metapoint label="Flagged">{metadata.flag ? "Yes" : "No"}</Metapoint>
+      <Metapoint label="Colour">{metadata.label}</Metapoint>
+      <Metapoint label="Size" className="last">{`${metadata.width} x ${metadata.height}`}</Metapoint>
+    </Grid>
   )
 }
 
@@ -210,9 +190,12 @@ function Thumbnail({ id, isVisible }: ThumbnailProps) {
     fetchThumbnail(id)
   }
 
+
   const img =
     <img
       src={url}
+      // blocks the UI. image_protocol should be async
+      // src={`image://localhost/${id}.thumb`}
       alt=""
       style={{
         display: "block",

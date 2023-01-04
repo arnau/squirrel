@@ -3,7 +3,6 @@
     windows_subsystem = "windows"
 )]
 
-use anyhow::bail;
 use nut::entities::asset::AssetId;
 use nut::entities::storage::{params, Pool, Storage};
 use nut::services;
@@ -14,6 +13,9 @@ use nut::services;
 use tauri::Manager;
 // use tauri::State;
 use tauri::{CustomMenuItem, Menu, MenuEntry, MenuItem, Submenu};
+
+mod image_protocol;
+use image_protocol::image_protocol;
 
 // TODO: Decide whether I need a complementary ephemeral storage.
 // struct Storagex {
@@ -112,70 +114,6 @@ fn connect(pool: tauri::State<Pool>) {
 //     dbg!(storage.store.lock().unwrap().len());
 // }
 
-// https://github.com/tauri-apps/wry/blob/dev/examples/custom_protocol.rs
-// https://docs.rs/tauri/1.0.0-beta.8/tauri/struct.Builder.html#method.register_uri_scheme_protocol
-fn image_protocol(
-    app: &tauri::AppHandle,
-    request: &tauri::http::Request,
-) -> Result<tauri::http::Response, Box<dyn std::error::Error>> {
-    let pool: tauri::State<Pool> = app.try_state().expect("couldn't find state pool.");
-    // prepare our response
-    let mut response = tauri::http::ResponseBuilder::new();
-    let route = request
-        .uri()
-        .strip_prefix("image://localhost/")
-        .expect("failed to remove image://localhost/ from the URI.");
-    let route = percent_encoding::percent_decode(route.as_bytes())
-        .decode_utf8_lossy()
-        .to_string();
-
-    let blob = match route.rsplit_once('.') {
-        Some((id, "max")) => {
-            if let Ok(blob) = nut::services::navigator::get_image(&pool, &id.to_string()) {
-                blob
-            } else {
-                return response.mimetype("text/plain").status(404).body(Vec::new());
-            }
-        }
-        Some((id, "thumb")) => {
-            if let Ok(blob) = nut::services::navigator::get_thumbnail(&pool, &id.to_string()) {
-                blob
-            } else {
-                return response.mimetype("text/plain").status(404).body(Vec::new());
-            }
-        }
-
-        Some(_) => {
-            return response
-                .mimetype("text/plain")
-                .status(422)
-                .body("unknown image size".as_bytes().to_vec())
-        }
-        None => {
-            return response
-                .mimetype("text/plain")
-                .status(400)
-                .body("no image size found".as_bytes().to_vec())
-        }
-    };
-
-    // if path != "example/test_video.mp4" {
-    //   // return error 404 if it's not out video
-    //   return response.mimetype("text/plain").status(404).body(Vec::new());
-    // }
-
-    // default status code
-    // let mut status_code = 200;
-
-    // Only macOS and Windows are supported, if you set headers in linux they are ignored
-    response = response
-        .header("Content-Type", "image/jpg")
-        .header("Content-Length", blob.data.len())
-        // TODO
-        .header("ETag", "hash_from_blob");
-
-    response.mimetype("image/jpeg").status(200).body(blob.data)
-}
 
 fn main() -> anyhow::Result<()> {
     let ctx = tauri::generate_context!();
