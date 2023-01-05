@@ -36,7 +36,7 @@ export function ThumbPane({ location, assets }: ThumbPaneProps) {
           ? <Text
             marginTop={2}
             textAlign="center"
-          >(folder empty)</Text>
+          >(empty folder)</Text>
           : <Records list={assets} current_route={location.path} />
       }
     </GridItem>

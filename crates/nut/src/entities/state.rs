@@ -47,7 +47,7 @@ pub enum State {
     Config {},
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Folder {
     pub id: String,
     pub path: String,

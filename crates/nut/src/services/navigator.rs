@@ -52,12 +52,24 @@ where
     let roots = state_repo.get_roots()?;
     let (folders, assets) = get_descendants(conn, location.ancestor())?;
 
-    let state = State::Catalogue {
-        location,
-        roots,
-        folders,
-        assets,
+    let state = if path == "/" {
+        State::Catalogue {
+            location,
+            folders: roots.clone(),
+            roots,
+            assets,
+        }
+    } else {
+        State::Catalogue {
+            location,
+            roots,
+            folders,
+            assets,
+        }
     };
+
+    dbg!(&state);
+
     Ok(state)
 }
 

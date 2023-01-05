@@ -6,9 +6,11 @@ import { useStore } from "./world"
 
 function App() {
   const locate = useStore(state => state.locate)
+  const currentRoute = useStore(state => state.getCurrentRoute())
 
   // Initial fetch.
-  locate("/")
+  locate(currentRoute)
+
 
   return (
     <Router />

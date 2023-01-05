@@ -2,6 +2,8 @@ import { invoke } from "@tauri-apps/api/tauri"
 import { Asset, Folder, Value, Location, Stem, AssetId } from "./catalogue/value"
 import createStore from "zustand"
 import { Route } from "./aux/route"
+import type { History } from "./history"
+import * as history from "./history"
 // import createStore, { SetState } from "zustand"
 
 
@@ -15,15 +17,34 @@ function createCache() {
   }
 }
 
+export interface LocateResponse {
+  status: "success" | "error";
+  route: Route;
+  message?: string;
+}
+
 export interface Store {
   world: World;
   cache: Cache;
+  history: History;
 
   fetchThumbnail: (id: AssetId) => void;
 
-  locate: (route: Route) => void;
+  locate: (route: Route) => Promise<LocateResponse>;
+
+  // history
+  add: (route: Route) => void;
+  back: () => Route;
+  forward: () => Route;
+  isFirst: () => boolean;
+  isLast: () => boolean;
+  getCurrentRoute: () => Route;
+  getHistory: () => History;
+
+  // locatorbar
   setRoute: (route: Route) => void;
   getRoute: () => Route | null;
+
   focus: () => void;
   blur: () => void;
   isInFocus: () => boolean;
@@ -33,6 +54,7 @@ export const useStore = createStore<Store>((set, get) => ({
   // The world starts in the Void.
   world: { id: "void" },
   cache: createCache(),
+  history: history.init("/"),
 
   fetchThumbnail: async (id: AssetId) => {
     try {
@@ -61,15 +83,57 @@ export const useStore = createStore<Store>((set, get) => ({
   },
 
   // Catalogue Actions
-  locate: async (route: Route) => {
+  locate: async (route: Route): Promise<LocateResponse> => {
     try {
       const value: Value = await invoke("locate", { route })
 
+      // TODO: handle error
+      console.log(value)
+
+      if (route !== get().history.present) {
+        get().add(route)
+      }
+
       set(state => ({ world: updateCatalogue(value, state.world) }))
+
+      console.log(get().history)
+
+      return ({ status: 'success', route })
     } catch (error) {
-      console.error(error)
+      const message = error as string
+      console.log(error)
+
+      return ({ status: "error", route, message })
     }
   },
+
+  // history
+  add: (route: Route) => {
+    set(state => ({ history: history.add(route, state.history) }))
+    console.log(get().history)
+  },
+  back: () => {
+    set(state => ({ history: history.back(state.history) }))
+    return get().history.present
+  },
+  forward: () => {
+    set(state => ({ history: history.forward(state.history) }))
+    return get().history.present
+  },
+  isFirst: () => {
+    return history.isFirst(get().history)
+  },
+  isLast: () => {
+    return history.isLast(get().history)
+  },
+  getCurrentRoute: () => {
+    return get().history.present
+  },
+  getHistory: () => {
+    return get().history
+  },
+
+  // location bar
   setRoute: (route) => {
     set(state => ({ world: updateRoute(route, state.world) }))
   },
@@ -151,6 +215,7 @@ export function updateCatalogue(value: Value, world: World): World {
     return newWorld
   }
 }
+
 
 export function updateRoute(route: Route, world: World): World {
   if (world.id == "void") {

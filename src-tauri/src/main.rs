@@ -5,7 +5,7 @@
 
 use nut::entities::asset::AssetId;
 use nut::entities::storage::{params, Pool, Storage};
-use nut::services;
+use nut::services::{navigator, starter};
 // use std::fs;
 // use std::io::prelude::*;
 // use std::str::FromStr;
@@ -24,7 +24,7 @@ use image_protocol::image_protocol;
 
 #[tauri::command]
 async fn locate(route: String, pool: tauri::State<'_, Pool>) -> Result<nut::State, String> {
-    let res = services::navigator::get_path(&pool, &route);
+    let res = navigator::get_path(&pool, &route);
 
     match res {
         Ok(state) => Ok(state),
@@ -45,7 +45,7 @@ async fn locate(route: String, pool: tauri::State<'_, Pool>) -> Result<nut::Stat
 
 #[tauri::command]
 async fn thumbnail(id: AssetId, pool: tauri::State<'_, Pool>) -> Result<String, String> {
-    let data = if let Ok(blob) = nut::services::navigator::get_thumbnail(&pool, &id) {
+    let data = if let Ok(blob) = navigator::get_thumbnail(&pool, &id) {
         blob.data
     } else {
         return Err("failed to retrieve thumbnail".into());
@@ -114,12 +114,12 @@ fn connect(pool: tauri::State<Pool>) {
 //     dbg!(storage.store.lock().unwrap().len());
 // }
 
-
 fn main() -> anyhow::Result<()> {
     let ctx = tauri::generate_context!();
     // TODO: resolve the db path with dirs.
     let db_location = "/Users/arnau/Library/ApplicationSupport/net.seachess.squirrel/squirrel.db";
-    let pool = services::starter::start(db_location)?;
+    dbg!(&db_location);
+    let pool = starter::start(db_location)?;
 
     let app = tauri::Builder::default()
         // .manage(Storagex {

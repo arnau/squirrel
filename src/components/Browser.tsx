@@ -13,6 +13,7 @@ import { convertFileSrc } from "@tauri-apps/api/tauri"
 export function Browser() {
   const world = useStore(state => state.world) as Catalogue
   const locate = useStore(state => state.locate)
+  const add = useStore(state => state.add)
   const roots = getRoots(world)
   const folders = getFolders(world)
   const assets = getAssets(world)

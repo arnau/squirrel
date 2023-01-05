@@ -1,12 +1,16 @@
-import { Box, GridItem, Link, List, ListItem, Text, useStyleConfig } from "@chakra-ui/react"
+import { GridItem, Link, List, ListItem, Text, useStyleConfig } from "@chakra-ui/react"
 import { Folder, Location } from "../catalogue/value"
 import { MouseEvent, ReactNode } from "react"
 import { lastSegment, Route } from "../aux/route"
 
 
-export default function FolderPane({ location, roots, folders, onClick }: FolderPaneProps) {
-  const currentRoot = location.stems[0]
-
+interface FolderPaneProps {
+  location: Location;
+  roots: Array<Folder>;
+  folders: Array<Folder>;
+  onClick: (event: MouseEvent<HTMLElement>) => void;
+}
+export default function FolderPane({ folders, onClick }: FolderPaneProps) {
   return (
     <GridItem
       colSpan={1}
@@ -15,55 +19,17 @@ export default function FolderPane({ location, roots, folders, onClick }: Folder
       overflowY="auto"
       onClick={onClick}
     >
-      {
-        // It's /
-        currentRoot === undefined
-          ? roots.map(root => <Root key={root.id} {...root} />)
-          : roots.map(root =>
-            root.id == currentRoot.id
-              ? <CurrentRoot key={root.id} folders={folders} {...root} />
-              : <Root key={root.id} {...root} />)
-
-      }
+      <FolderList folders={folders} />
     </GridItem>
   )
 }
 
-interface FolderPaneProps {
-  location: Location;
-  roots: Array<Folder>;
-  folders: Array<Folder>;
-  onClick: (event: MouseEvent<HTMLElement>) => void;
-}
-
-function Root({ path }: Folder) {
-  return (
-    <Box>
-      <NavLink href={path}>{path}</NavLink>
-    </Box>
-  )
-}
-
-interface CurrentRootProps {
-  id: string;
-  path: Route;
-  folders: Array<Folder>;
-}
-
-function CurrentRoot({ path, folders }: CurrentRootProps) {
-  return (
-    <Box>
-      <NavLink href={path}>{path}</NavLink>
-      <FolderList folders={folders} />
-    </Box>
-  )
-}
 
 function FolderList({ folders }: { folders: Array<Folder> }) {
   return (
     folders.length > 0
       ? <List>{folders.map(folder => <FolderItem key={folder.id} {...folder} />)}</List>
-      : <Text fontSize="small">(empty)</Text>
+      : <Text textAlign="center" fontSize="small">(empty folder)</Text>
   )
 }
 
