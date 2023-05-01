@@ -1,0 +1,96 @@
+@import "../palette.scss";
+
+:root {
+  --squirrel-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+}
+
+/* TODO: extract */
+* {
+  box-sizing: border-box;
+  touch-action: manipulation;
+}
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  font-family: var(--squirrel-font);
+  background-color: var(--neutral);
+  color: var(--foreground);
+}
+
+button, input, select, textarea {
+  font-family: inherit;
+  font-size: 100%;
+}
+
+.wrap {
+  padding: 8px;
+}
+
+.log {
+  border: 1px solid var(--grey900);
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.log caption {
+  padding-bottom: 8px;
+}
+
+.log td,
+.log th {
+  border: 1px solid var(--grey900);
+  padding: 8px;
+}
+
+.log tbody tr:hover {
+  background-color: var(--grey700);
+}
+
+.log thead th {
+  background-color: var(--grey605)
+}
+
+.bag {
+  overflow-x: auto;
+  max-width: 54ch;
+  margin: 0;
+}
+
+.bag li {
+  white-space: nowrap;
+}
+
+
+// filter
+
+textarea {
+  background-color: var(--grey400);
+  border-radius: 4px;
+  border: 1px solid var(--grey900);
+  display: block;
+  font-family: var(--squirrel-font);
+  height: 16vh;
+  padding: 16px;
+  resize: none;
+  width: 100%;
+}
+
+
+.button_group {
+  margin: 8px 0;
+}
+
+button {
+  background-color: var(--grey600);
+  border-radius: 4px;
+  border: 1px solid var(--grey300);
+  color: var(--grey300);
+  font-family: var(--squirrel-font);
+}
+
+.dangerButton {
+  background-color: red;
+  color: black;
+  border-color: gold;
+}

@@ -94,6 +94,16 @@ impl Storage {
         Ok(result)
     }
 
+    pub fn execute<C, P>(conn: &C, query: &str, params: P) -> Result<()>
+    where
+        P: rusqlite::Params,
+        C: Deref<Target = Connection>,
+    {
+        let mut stmt = conn.prepare(query)?;
+        stmt.execute(params)?;
+
+        Ok(())
+    }
 
     pub fn explore<C, T, P, F>(conn: &C, query: &str, params: P, f: F) -> Result<()>
     where

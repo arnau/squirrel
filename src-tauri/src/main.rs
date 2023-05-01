@@ -5,14 +5,15 @@
 
 use nut::entities::asset::AssetId;
 use nut::entities::storage::{params, Pool, Storage};
-use nut::services::{navigator, starter};
+use nut::services::{navigator, starter, inspector};
 // use std::fs;
 // use std::io::prelude::*;
 // use std::str::FromStr;
 // use std::{collections::HashMap, sync::Mutex};
-use tauri::Manager;
+use tauri::{Manager, WindowBuilder, WindowUrl};
 // use tauri::State;
 use tauri::{CustomMenuItem, Menu, MenuEntry, MenuItem, Submenu};
+use base64::{Engine as _, engine::general_purpose};
 
 mod image_protocol;
 use image_protocol::image_protocol;
@@ -21,6 +22,34 @@ use image_protocol::image_protocol;
 // struct Storagex {
 //     store: Mutex<HashMap<u64, String>>,
 // }
+
+#[tauri::command]
+async fn open_inspector(app: tauri::AppHandle) {
+    let window = WindowBuilder::new(&app, "inspector", WindowUrl::App("inspector".into()))
+        .build()
+        .unwrap();
+}
+
+#[tauri::command]
+async fn inspect_logs(query: String, pool: tauri::State<'_, Pool>) -> Result<nut::entities::event::EventLog, String> {
+    let res = inspector::get_logs(&pool, &query);
+
+    match res {
+        Ok(state) => Ok(state),
+        Err(err) => Err(err.to_string()),
+    }
+}
+
+#[tauri::command]
+async fn prune_logs(query: String, pool: tauri::State<'_, Pool>) -> Result<nut::entities::event::EventLog, String> {
+    let res = inspector::prune_logs(&pool, &query);
+
+    match res {
+        Ok(state) => Ok(state),
+        Err(err) => Err(err.to_string()),
+    }
+}
+
 
 #[tauri::command]
 async fn locate(route: String, pool: tauri::State<'_, Pool>) -> Result<nut::State, String> {
@@ -51,7 +80,7 @@ async fn thumbnail(id: AssetId, pool: tauri::State<'_, Pool>) -> Result<String, 
         return Err("failed to retrieve thumbnail".into());
     };
 
-    Ok(base64::encode(data))
+    Ok(general_purpose::STANDARD.encode(data))
 }
 
 // #[tauri::command]
@@ -137,9 +166,19 @@ fn main() -> anyhow::Result<()> {
             // let main_window = app.get_window("main").unwrap();
             // tauri::api::dialog::message(Some(&main_window), "Hello", "Jo t'estimo més!!");
 
+            let handle = app.handle();
+            std::thread::spawn(move || {
+                let window = WindowBuilder::new(&handle, "inspector", WindowUrl::App("inspector.html".into()))
+                    .inner_size(800.0, 800.0)
+                    .focused(true)
+                    .build()
+                    .unwrap();
+                window.open_devtools();
+            });
+
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![locate, connect, thumbnail])
+        .invoke_handler(tauri::generate_handler![locate, connect, thumbnail, inspect_logs, prune_logs, open_inspector])
         .menu(Menu::with_items([
             MenuEntry::Submenu(Submenu::new(
                 &ctx.package_info().name,

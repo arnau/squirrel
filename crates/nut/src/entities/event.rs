@@ -5,6 +5,8 @@ use std::fmt;
 use std::str::FromStr;
 use thiserror::Error;
 
+pub type EventLog = Vec<Event>;
+
 /// Represents an event that happened in the system. For example an import action started.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Event {

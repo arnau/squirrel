@@ -3,13 +3,16 @@ import "./App.css"
 import { StartScreen } from "./components/StartScreen"
 import { CatalogueScreen } from "./components/CatalogueScreen"
 import { useStore } from "./world"
+import { useEffect } from "react"
 
 function App() {
   const locate = useStore(state => state.locate)
   const currentRoute = useStore(state => state.getCurrentRoute())
 
-  // Initial fetch.
-  locate(currentRoute)
+  useEffect(() => {
+    // Initial fetch.
+    locate(currentRoute)
+  }, [])
 
 
   return (
