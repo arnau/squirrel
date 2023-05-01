@@ -9,6 +9,8 @@ pub struct CatalogueRepository;
 impl Repository for CatalogueRepository {}
 
 impl CatalogueRepository {
+    // TODO: Consider checking for integrity. I.e. all tables exist and follow
+    // the expected schema for the given version.
     pub fn check_exists<C>(conn: &C) -> Result<bool>
     where
         C: Deref<Target = Connection>,
@@ -18,13 +20,14 @@ impl CatalogueRepository {
             count(1)
         FROM
             pragma_table_list
+        WHERE
+            name = 'catalogue_metadata'
         "#;
 
         Storage::get_one(conn, query, params![], |row| {
             let value: usize = row.get(0)?;
 
-            // Schema has 6 tables. SQLite adds sqlite_schema and sqlite_temp_schema.
-            Ok(value == 8)
+            Ok(value == 1)
         })
     }
 
