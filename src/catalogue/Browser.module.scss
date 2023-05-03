@@ -1,0 +1,48 @@
+@use "../prelude.scss";
+
+.grid {
+  display: grid;
+  gap: var(--base-unit);
+  grid-template-rows: 50px repeat(5, 1fr);
+  grid-template-columns: 240px 300px minmax(600px, 1fr);
+  height: 100vh;
+  background-color: var(--grey800);
+  min-width: 900px;
+}
+
+@mixin pane {
+  background-color: var(--neutral);
+}
+
+.locator_pane {
+  @include pane;
+
+  grid-column: span 3;
+  grid-row: span 1;
+  padding: calc(var(--base-unit) * 2) calc(var(--base-unit) * 4);
+  background-color: var(--grey700);
+}
+
+.asset_pane {
+  @include pane;
+
+  grid-column: span 1;
+  grid-row: span 5;
+  position: relative;
+}
+
+.tree_pane {
+  @include pane;
+
+  grid-column: span 1;
+  grid-row: span 5;
+  overflow-y: auto;
+}
+
+.thumb_pane {
+  @include pane;
+
+  grid-column: span 1;
+  grid-row: span 5;
+  overflow-y: auto;
+}
