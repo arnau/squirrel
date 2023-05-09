@@ -1,5 +1,5 @@
 
-import { For, Show } from "solid-js"
+import { For, Match, Show, Switch } from "solid-js"
 import styles from "./Inspector.module.scss"
 import { useInspector } from "./InspectorContext"
 
@@ -55,6 +55,24 @@ function Bag(props: any) {
 
 function BagItem(props: any) {
   return (
-    <li>{props.key}: {props.value}</li>
+  <li>{props.key}:
+    <Switch>
+      <Match when={Array.isArray(props.value)}>
+        {JSON.stringify(props.value)}
+      </Match>
+      <Match when={typeof props.value === "object"}>
+        {JSON.stringify(props.value)}
+      </Match>
+      <Match when={typeof props.value === "number"}>
+        {props.value}
+      </Match>
+      <Match when={typeof props.value === "string"}>
+        {props.value}
+      </Match>
+      <Match when={typeof props.value === "boolean"}>
+        {props.value.toString()}
+      </Match>
+    </Switch>
+    </li>
   )
 }

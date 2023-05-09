@@ -50,6 +50,37 @@ impl<'c, Conn: Deref<Target = Connection>> StateRepository<'c, Conn> {
         })
     }
 
+    pub fn get_folders_with_count(&self, parent_id: &str) -> Result<Vec<(String, usize)>> {
+        let query = r#"
+        SELECT
+            path,
+            (
+                SELECT
+                    count(1)
+                FROM
+                    entry
+                WHERE
+                    entry.parent_id = main_entry.id
+                AND
+                    entry.kind = 'folder'
+            ) AS count
+        FROM
+            entry AS main_entry
+        WHERE
+            main_entry.parent_id = ?
+        AND
+            main_entry.kind = 'folder'
+        ORDER BY main_entry.path ASC
+        "#;
+
+        Storage::get(self.0, query, params![parent_id], |row| {
+            let path: String = row.get(0)?;
+            let count: usize = row.get(1)?;
+
+            Ok((path, count))
+        })
+    }
+
     pub fn get_assets(&self, parent_id: &str) -> Result<Vec<Asset>> {
         let query = r#"
         SELECT

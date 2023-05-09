@@ -5,15 +5,15 @@
 
 use nut::entities::asset::AssetId;
 use nut::entities::storage::{params, Pool, Storage};
-use nut::services::{navigator, starter, inspector};
+use nut::services::{inspector, navigator, starter};
 // use std::fs;
 // use std::io::prelude::*;
 // use std::str::FromStr;
 // use std::{collections::HashMap, sync::Mutex};
 use tauri::{Manager, WindowBuilder, WindowUrl};
 // use tauri::State;
+use base64::{engine::general_purpose, Engine as _};
 use tauri::{CustomMenuItem, Menu, MenuEntry, MenuItem, Submenu};
-use base64::{Engine as _, engine::general_purpose};
 
 mod image_protocol;
 use image_protocol::image_protocol;
@@ -31,7 +31,10 @@ async fn open_inspector(app: tauri::AppHandle) {
 }
 
 #[tauri::command]
-async fn inspect_logs(query: String, pool: tauri::State<'_, Pool>) -> Result<nut::entities::event::EventLog, String> {
+async fn inspect_logs(
+    query: String,
+    pool: tauri::State<'_, Pool>,
+) -> Result<nut::entities::event::EventLog, String> {
     let res = inspector::get_logs(&pool, &query);
 
     match res {
@@ -41,7 +44,10 @@ async fn inspect_logs(query: String, pool: tauri::State<'_, Pool>) -> Result<nut
 }
 
 #[tauri::command]
-async fn prune_logs(query: String, pool: tauri::State<'_, Pool>) -> Result<nut::entities::event::EventLog, String> {
+async fn prune_logs(
+    query: String,
+    pool: tauri::State<'_, Pool>,
+) -> Result<nut::entities::event::EventLog, String> {
     let res = inspector::prune_logs(&pool, &query);
 
     match res {
@@ -50,10 +56,39 @@ async fn prune_logs(query: String, pool: tauri::State<'_, Pool>) -> Result<nut::
     }
 }
 
-
 #[tauri::command]
 async fn locate(route: String, pool: tauri::State<'_, Pool>) -> Result<nut::State, String> {
     let res = navigator::get_path(&pool, &route);
+
+    match res {
+        Ok(state) => Ok(state),
+        Err(err) => Err(err.to_string()),
+    }
+}
+
+#[tauri::command]
+async fn fetch_ground(pool: tauri::State<'_, Pool>) -> Result<nut::State, String> {
+    let res = navigator::get_ground(&pool);
+
+    match res {
+        Ok(state) => Ok(state),
+        Err(err) => Err(err.to_string()),
+    }
+}
+
+#[tauri::command]
+async fn fetch_root(path: String, pool: tauri::State<'_, Pool>) -> Result<nut::State, String> {
+    let res = navigator::get_root(&pool, &path);
+
+    match res {
+        Ok(state) => Ok(state),
+        Err(err) => Err(err.to_string()),
+    }
+}
+
+#[tauri::command]
+async fn fetch_route(route: String, pool: tauri::State<'_, Pool>) -> Result<nut::State, String> {
+    let res = navigator::get_route(&pool, &route);
 
     match res {
         Ok(state) => Ok(state),
@@ -168,17 +203,31 @@ fn main() -> anyhow::Result<()> {
 
             let handle = app.handle();
             std::thread::spawn(move || {
-                let window = WindowBuilder::new(&handle, "inspector", WindowUrl::App("inspector.html".into()))
-                    .inner_size(800.0, 800.0)
-                    .focused(true)
-                    .build()
-                    .unwrap();
+                let window = WindowBuilder::new(
+                    &handle,
+                    "inspector",
+                    WindowUrl::App("inspector.html".into()),
+                )
+                .inner_size(800.0, 800.0)
+                .focused(true)
+                .build()
+                .unwrap();
                 window.open_devtools();
             });
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![locate, connect, thumbnail, inspect_logs, prune_logs, open_inspector])
+        .invoke_handler(tauri::generate_handler![
+            locate,
+            fetch_ground,
+            fetch_root,
+            fetch_route,
+            connect,
+            thumbnail,
+            inspect_logs,
+            prune_logs,
+            open_inspector,
+        ])
         .menu(Menu::with_items([
             MenuEntry::Submenu(Submenu::new(
                 &ctx.package_info().name,

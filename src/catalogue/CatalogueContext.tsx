@@ -1,43 +1,74 @@
-import { invoke } from '@tauri-apps/api';
-import { createContext, createSignal, onMount, useContext } from 'solid-js';
-import { type Route } from '../aux/route';
-import { Value } from '../catalogue/value';
+import { invoke } from "@tauri-apps/api"
+import { batch, createContext, createSignal, useContext } from "solid-js"
+import { createStore, produce } from "solid-js/store"
+import { Fragment, fromFragment, type Route } from "../aux/route"
+import { Folder, State, StateGround, StateTree, Tree, TreeNode } from "../catalogue/value"
 
 
 export interface LocateError {
-  route: Route,
+  oldRoute: Route,
+  newRoute: Route,
   message: string,
 }
 
-type CatalogueItem = Value
+type RootList = Array<Folder>
+
+class FetchError extends Error {
+  action: string
+
+  constructor(message: string, action: string, options: Object = {}) {
+    super(message, options)
+
+    this.action = action
+  }
+
+}
 
 export const CatalogueContext = createContext()
 export function CatalogueProvider(props: any) {
   // current catalogue route.
   const [route, setRoute] = createSignal<Route>("/")
-  // current catalogue item. TODO: Reshape and split.
-  const [catalogueItem, setCatalogueItem] = createSignal<CatalogueItem>()
+  const [roots, setRoots] = createSignal<RootList>()
+  const [tree, setTree] = createStore<Tree>({ kind: "Empty" })
+  const [state, setState] = createStore<State>({ tree: {}, isDetailsOpen: false })
 
-  onMount(async () => {
-    await locate(route())
-  })
-
-  const locate = async (route: Route) => {
+  const fetchGround = async () => {
     try {
-      const value: Value = await invoke("locate", { route })
+      const state: StateGround = await invoke("fetch_ground")
 
-      // TODO: handle error
-      console.log(value)
+      setRoots(state.roots)
 
-      setCatalogueItem(value)
-      setRoute(route)
     } catch (error) {
       const message = error as string
-
-      console.log(error)
-
-      throw ({ route, message } as LocateError)
+      throw (new FetchError(message, "fetchGround"))
     }
+  }
+
+  const fetchRoot = async (newRoute: Route) => {
+    try {
+      const state: StateTree = await invoke("fetch_root", { path: newRoute })
+
+      const size = new TextEncoder().encode(JSON.stringify(state)).length
+      const kiloBytes = size / 1024;
+
+      console.log('KB', kiloBytes)
+
+      batch(() => {
+        setTree(state.value)
+        setRoute(newRoute)
+      })
+
+    } catch (error) {
+      throw (new FetchError((error as Error).message, "fetchRoot"))
+    }
+  }
+
+  const resetRoot = (newRoute: Route) => {
+    batch(() => {
+      setTree({ kind: "Empty", path: undefined, children: undefined })
+      setState({ tree: {} })
+      setRoute(newRoute)
+    })
   }
 
 
@@ -45,12 +76,47 @@ export function CatalogueProvider(props: any) {
     // read
     {
       route,
+      roots,
+      tree,
+      state,
     },
 
     // write
     {
-      locate,
+      fetchGround,
+      fetchRoot,
+      resetRoot,
 
+      setRouteFromFragment(fragment: Fragment) {
+        const newRoute = fromFragment(fragment)
+        if (newRoute !== route()) {
+          setRoute(newRoute)
+        }
+      },
+
+      toggleFolderDetails() {
+        setState('isDetailsOpen', s => !s)
+      },
+
+      toggleRoot(newRoute: Route) {
+        (tree as TreeNode).path === newRoute
+          ? resetRoot(newRoute)
+          : fetchRoot(newRoute)
+      },
+
+      toggleTreeNode(newRoute: Route) {
+        setState('tree',
+          produce(treeState => {
+            let state = treeState[newRoute]
+
+            if (state === undefined) {
+              treeState[newRoute] = { isOpen: true }
+            } else {
+              treeState[newRoute].isOpen = !state.isOpen
+            }
+          })
+        )
+      },
     }
   ]
 
@@ -61,4 +127,4 @@ export function CatalogueProvider(props: any) {
   )
 }
 
-export function useNavigator() { return useContext(CatalogueContext); }
+export function useCatalogue() { return useContext(CatalogueContext); }

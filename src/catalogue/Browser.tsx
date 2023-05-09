@@ -1,34 +1,19 @@
+import { createEffect } from "solid-js"
 import styles from "./Browser.module.scss"
+import { useCatalogue } from "./CatalogueContext"
+import { A, useParams } from "@solidjs/router"
+import { TreePane } from "./TreePane"
 
-// import { ThumbPane } from "./ThumbPane"
-// import FolderPane from "./FolderPane"
-// import LocatorBar from "./LocatorBar"
-// import { Catalogue, getAssets, getFolders, getRoots, getLocation, useStore, getCurrentStem } from "../world"
-// import { Grid, GridItem } from "@chakra-ui/react"
-// import { MaximiseButton } from "./ExpandToggle"
-// import { MouseEvent } from "react"
-// import { convertFileSrc } from "@tauri-apps/api/tauri"
-//
-//
+
 /** Defines the main layout for browsing the catalogue.
  */
 export function Browser() {
-  // const world = useStore(state => state.world) as Catalogue
-  // const locate = useStore(state => state.locate)
-  // const add = useStore(state => state.add)
-  // const roots = getRoots(world)
-  // const folders = getFolders(world)
-  // const assets = getAssets(world)
-  // const location = getLocation(world)
-  // const stem = getCurrentStem(location)
-  //
-  // const handleClick = (event: MouseEvent<HTMLElement>) => {
-  //   const target = event.target as HTMLElement
-  //
-  //   if (target.nodeName == "A") {
-  //     locate((target as HTMLAnchorElement).pathname)
-  //   }
-  // }
+  const params = useParams()
+  const [{ route }, { setRouteFromFragment }]: any = useCatalogue()
+
+  createEffect(() => {
+    setRouteFromFragment(params.fragment)
+  })
 
   return (
     <div class={styles.grid}>
@@ -41,16 +26,18 @@ export function Browser() {
 }
 
 function LocatorPane() {
+  const [{ route }]: any = useCatalogue()
   // <LocatorBar />
   return (
-    <div class={styles.locator_pane}></div>
+    <div class={styles.locator_pane}>
+      <A href="/catalogue/">Catalogue</A>
+
+      <span class={styles.location}>Route: {route()}</span>
+    </div>
   )
 }
-function TreePane() {
-  return (
-    <div class={styles.tree_pane}></div>
-  )
-}
+
+
 function ThumbPane() {
   return (
     <div class={styles.thumb_pane}></div>

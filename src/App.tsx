@@ -1,4 +1,4 @@
-import { Route, Routes } from "@solidjs/router";
+import { Navigate, Route, Routes } from "@solidjs/router";
 import { CatalogueProvider } from "./catalogue/CatalogueContext";
 import { NavigatorProvider } from "./navigator/NavigatorContext";
 import { lazy } from "solid-js";
@@ -10,9 +10,9 @@ export function App() {
     <NavigatorProvider>
       <CatalogueProvider>
         <Routes>
-          <Route path="/catalogue/*route" component={CatalogueScreen} />
+          <Route path="/catalogue/*fragment" component={CatalogueScreen} />
           <Route path="/settings" element={<div>settings, import screen, etc</div>} />
-          <Route path="/" component={CatalogueScreen} />
+          <Route path="/" element={<Navigate href="/catalogue" />} />
         </Routes>
       </CatalogueProvider>
     </NavigatorProvider>

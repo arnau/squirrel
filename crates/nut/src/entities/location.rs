@@ -26,6 +26,10 @@ impl Location {
         &self.stems
     }
 
+    pub fn root(&self) -> Option<&Stem> {
+        self.stems.first()
+    }
+
     pub fn parent(&self) -> Option<&Stem> {
         self.stems.get(self.stems.len() - 2)
     }

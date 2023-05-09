@@ -1,20 +1,23 @@
-import { useParams } from "@solidjs/router"
 import styles from "./Catalogue.module.scss"
-import { ErrorBoundary, createEffect } from "solid-js"
+import { ErrorBoundary, onMount } from "solid-js"
 import { Browser } from "./Browser"
+import { useCatalogue } from "./CatalogueContext"
 
 // TODO:
 //
 // - recreate state in navigator context
 // - migrate App to Solidjs
 // - migrate chackra to scss
-// - migrate fake urls to Router
 // - catch errors using solid error boundaries (e.g. locate fails, what should be displayed?)
-export function CatalogueScreen() {
-  const params = useParams()
 
-  createEffect(() => {
-    console.log('params', params.route)
+
+// TODO locate("/") should fetch location as well as any data to display
+// on this path.
+export function CatalogueScreen() {
+  const [, {fetchGround}]: any = useCatalogue()
+
+  onMount(async () => {
+    await fetchGround()
   })
 
   return (

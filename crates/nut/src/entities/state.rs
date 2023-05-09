@@ -43,8 +43,42 @@ pub enum State {
         assets: Vec<Asset>,
     },
 
+    Route {
+        location: Location,
+        /// A page of up to n assets.
+        assets: Vec<Asset>,
+        total_assets: usize,
+    },
+
+    /// A state for the catalogue ground. The Ground exposes the available roots.
+    ///
+    /// Its path is "/".
+    Ground {
+        roots: Vec<Folder>,
+    },
+
+    /// A state for a root tree.
+    Tree {
+        path: Path,
+        value: Tree,
+    },
+
     /// A state for the config.
     Config {},
+}
+
+type Path = String;
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum Tree {
+    Leaf {
+        path: Path,
+    },
+    Node {
+        path: Path,
+        children: Vec<Box<Tree>>,
+    },
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

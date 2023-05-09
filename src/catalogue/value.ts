@@ -64,3 +64,52 @@ export interface Location {
   path: Route;
   stems: Array<Stem>;
 }
+
+/**
+  * Maps to Rust's `State::Ground`
+  */
+export interface StateGround {
+  kind: "Ground",
+  roots: Array<Folder>,
+}
+
+
+/**
+  * Maps to Rust's `State::Tree`
+  */
+export interface StateTree {
+  kind: "Tree",
+  path: Route,
+  value: Tree,
+}
+
+export type Tree = TreeLeaf | TreeNode | TreeEmpty
+
+export interface TreeEmpty {
+  kind: "Empty",
+}
+
+export interface TreeLeaf {
+  kind: "Leaf",
+  path: Route,
+}
+
+export interface TreeNode {
+  kind: "Node",
+  path: Route,
+  children: Array<Tree>,
+}
+
+export interface State {
+  // folder details
+  isDetailsOpen: boolean,
+  tree: TreeState,
+}
+
+export interface TreeState {
+  [route: Route]: TreeItemState,
+}
+
+export interface TreeItemState {
+  isOpen: boolean,
+}

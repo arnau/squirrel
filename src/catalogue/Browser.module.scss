@@ -4,7 +4,7 @@
   display: grid;
   gap: var(--base-unit);
   grid-template-rows: 50px repeat(5, 1fr);
-  grid-template-columns: 240px 300px minmax(600px, 1fr);
+  grid-template-columns: 300px 300px minmax(600px, 1fr);
   height: 100vh;
   background-color: var(--grey800);
   min-width: 900px;
@@ -21,6 +21,14 @@
   grid-row: span 1;
   padding: calc(var(--base-unit) * 2) calc(var(--base-unit) * 4);
   background-color: var(--grey700);
+
+  display: flex;
+  align-items: stretch;
+}
+
+.location {
+  flex: 2;
+  text-align: center;
 }
 
 .asset_pane {
@@ -37,6 +45,90 @@
   grid-column: span 1;
   grid-row: span 5;
   overflow-y: auto;
+}
+
+.folder_tree {
+  overflow-y: auto;
+}
+
+.folder_details_open {
+  display: grid;
+  grid-template-rows: auto 200px;
+}
+
+.folder_details_close {
+  display: grid;
+  grid-template-rows: auto 33px;
+}
+
+
+.folder_details {
+  border-top: 4px solid var(--grey800);
+}
+
+.folder_details h1 {
+  font-size: 14px;
+  margin: 0;
+  padding: 8px;
+  font-weight: normal;
+  cursor: pointer;
+  color: var(--grey400);
+  background-color: var(--grey605);
+  border-bottom: 1px solid var(--grey700)
+}
+
+.folder_tree ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.folder_tree > ul {
+  padding: 8px;
+}
+
+.folder_tree ul ul {
+  padding-left: 16px;
+}
+
+.tree_pane .selected {
+  background-color: var(--grey700);
+}
+
+.tree_pane .tree_action {
+  font-size: 14px;
+  white-space: nowrap;
+  display: grid;
+  gap: var(--base-unit);
+  grid-template-columns: 16px auto;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.tree_pane .tree_action:hover {
+  background-color: var(--grey900);
+  // transition: background-color 1s ease-in;
+}
+
+.tree_pane a {
+  line-height: 16px;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.tree_pane button {
+  background-color: transparent;
+  border: none;
+  color: var(--grey300);
+  margin: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.tree_pane .noop {
+  color: var(--grey500);
 }
 
 .thumb_pane {
