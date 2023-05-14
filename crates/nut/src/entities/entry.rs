@@ -3,23 +3,26 @@ use rusqlite::{Result as SQLResult, Row};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
+pub type EntryId = String;
+pub type EntryPath = String;
+
 /// Represents a Squirrel entry. Either a Folder or a File.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Entry {
-    pub id: String,
-    pub path: String,
+    pub id: EntryId,
+    pub path: EntryPath,
     pub kind: Kind,
-    pub parent_id: Option<String>,
+    pub parent_id: Option<EntryId>,
     pub root_id: String,
     pub source_id: String,
 }
 
 impl Entry {
     pub fn from_row(row: &Row<'_>) -> SQLResult<Entry> {
-        let id: String = row.get(0)?;
-        let path: String = row.get(1)?;
+        let id: EntryId = row.get(0)?;
+        let path: EntryPath = row.get(1)?;
         let kind: Kind = row.get(2)?;
-        let parent_id: Option<String> = row.get(3)?;
+        let parent_id: Option<EntryId> = row.get(3)?;
         let root_id: String = row.get(4)?;
         let source_id: String = row.get(5)?;
 
@@ -36,7 +39,7 @@ impl Entry {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "snake_case")]
 pub enum Kind {
     File,

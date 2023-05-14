@@ -1,4 +1,12 @@
 
+// TODO: A Locator could be the combination of scope and id
+// e.g. `/catalogue/8878CB75-CE5D-4D7F-912B-B8EE66101C85`
+
+// A route identifer. E.g. `8878CB75-CE5D-4D7F-912B-B8EE66101C85`.
+//
+// It's equivalent the same as an EntryId (either Folder or File).
+export type RouteId = string
+
 // A route or path. E.g. `/2021/`, `/2021/foo/bar/`
 export type Route = string
 

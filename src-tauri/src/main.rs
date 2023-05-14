@@ -4,6 +4,7 @@
 )]
 
 use nut::entities::asset::AssetId;
+use nut::entities::state::{Location, LocationFolders, LocationAssetPage, Ground, FolderDetails};
 use nut::entities::storage::{params, Pool, Storage};
 use nut::services::{inspector, navigator, starter};
 // use std::fs;
@@ -25,7 +26,7 @@ use image_protocol::image_protocol;
 
 #[tauri::command]
 async fn open_inspector(app: tauri::AppHandle) {
-    let window = WindowBuilder::new(&app, "inspector", WindowUrl::App("inspector".into()))
+    let _window = WindowBuilder::new(&app, "inspector", WindowUrl::App("inspector".into()))
         .build()
         .unwrap();
 }
@@ -57,44 +58,78 @@ async fn prune_logs(
 }
 
 #[tauri::command]
-async fn locate(route: String, pool: tauri::State<'_, Pool>) -> Result<nut::State, String> {
-    let res = navigator::get_path(&pool, &route);
+async fn locate(id: String, pool: tauri::State<'_, Pool>) -> Result<Location, String> {
+    let res = navigator::locate(&pool, &id);
 
     match res {
         Ok(state) => Ok(state),
-        Err(err) => Err(err.to_string()),
+        Err(err) => {
+            dbg!(&err);
+            Err(err.to_string())
+
+        }
     }
 }
 
 #[tauri::command]
-async fn fetch_ground(pool: tauri::State<'_, Pool>) -> Result<nut::State, String> {
-    let res = navigator::get_ground(&pool);
+async fn locate_ground(pool: tauri::State<'_, Pool>) -> Result<Ground, String> {
+    let res = navigator::locate_ground(&pool);
 
     match res {
         Ok(state) => Ok(state),
-        Err(err) => Err(err.to_string()),
+        Err(err) => {
+            dbg!(&err);
+            Err(err.to_string())
+
+        }
     }
 }
 
 #[tauri::command]
-async fn fetch_root(path: String, pool: tauri::State<'_, Pool>) -> Result<nut::State, String> {
-    let res = navigator::get_root(&pool, &path);
+async fn locate_folders(id: String, pool: tauri::State<'_, Pool>) -> Result<LocationFolders, String> {
+    let res = navigator::locate_folders(&pool, &id);
 
     match res {
         Ok(state) => Ok(state),
-        Err(err) => Err(err.to_string()),
+        Err(err) => {
+            dbg!(&err);
+            Err(err.to_string())
+
+        }
     }
 }
 
 #[tauri::command]
-async fn fetch_route(route: String, pool: tauri::State<'_, Pool>) -> Result<nut::State, String> {
-    let res = navigator::get_route(&pool, &route);
+async fn locate_asset_page(id: String, cursor: Option<String>, pool: tauri::State<'_, Pool>) -> Result<LocationAssetPage, String> {
+    let res = navigator::locate_asset_page(&pool, &id, cursor);
 
     match res {
         Ok(state) => Ok(state),
-        Err(err) => Err(err.to_string()),
+        Err(err) => {
+            dbg!(&err);
+            Err(err.to_string())
+
+        }
     }
 }
+
+
+#[tauri::command]
+async fn fetch_folder_details(id: String, pool: tauri::State<'_, Pool>) -> Result<FolderDetails, String> {
+    let res = navigator::get_folder_details(&pool, &id);
+
+    match res {
+        Ok(state) => Ok(state),
+        Err(err) => {
+            dbg!(&err);
+            Err(err.to_string())
+
+        }
+
+    }
+
+}
+
 
 // #[tauri::command]
 // async fn state() -> Vec<u8> {
@@ -179,6 +214,7 @@ fn connect(pool: tauri::State<Pool>) {
 // }
 
 fn main() -> anyhow::Result<()> {
+    console_subscriber::init();
     let ctx = tauri::generate_context!();
     // TODO: resolve the db path with dirs.
     let db_location = "/Users/arnau/Library/ApplicationSupport/net.seachess.squirrel/squirrel.db";
@@ -219,9 +255,10 @@ fn main() -> anyhow::Result<()> {
         })
         .invoke_handler(tauri::generate_handler![
             locate,
-            fetch_ground,
-            fetch_root,
-            fetch_route,
+            locate_ground,
+            locate_folders,
+            locate_asset_page,
+            fetch_folder_details,
             connect,
             thumbnail,
             inspect_logs,
@@ -256,7 +293,7 @@ fn main() -> anyhow::Result<()> {
     app.run(|handle, e| match e {
         tauri::RunEvent::Exit => {
             let w = handle.get_window("main").unwrap();
-            tauri::api::dialog::ask(Some(&w), "Oh, what do we do?", "mess a ge", move |res| {
+            tauri::api::dialog::ask(Some(&w), "Oh, what do we do?", "mess a ge", move |_res| {
                 println!("function kaboom");
             });
             println!("mec");

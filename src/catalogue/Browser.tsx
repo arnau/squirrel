@@ -1,26 +1,33 @@
-import { createEffect } from "solid-js"
 import styles from "./Browser.module.scss"
-import { useCatalogue } from "./CatalogueContext"
-import { A, useParams } from "@solidjs/router"
+import { A, useLocation, useParams } from "@solidjs/router"
 import { TreePane } from "./TreePane"
+import { createEffect } from "solid-js"
+import { useCatalogue } from "./CatalogueContext"
 
 
 /** Defines the main layout for browsing the catalogue.
  */
 export function Browser() {
+  // TODO: How to disambiguate between two roots with the same name (path)?
+  //  - expose source? E.g. grounds could be a tree of sources + their respective roots.
+
   const params = useParams()
-  const [{ route }, { setRouteFromFragment }]: any = useCatalogue()
+  const { pathname } = useLocation()
+  const [, { navigate }]: any = useCatalogue()
 
   createEffect(() => {
-    setRouteFromFragment(params.fragment)
+    // TODO: Consider using data functions instead.
+    console.log(pathname)
+    const id = params.id ?? ""
+    navigate(id)
   })
 
   return (
     <div class={styles.grid}>
       <LocatorPane />
       <TreePane />
-      <ThumbPane />
-      <AssetPane />
+      <AssetsPane />
+      <ImagePane />
     </div>
   )
 }
@@ -32,20 +39,20 @@ function LocatorPane() {
     <div class={styles.locator_pane}>
       <A href="/catalogue/">Catalogue</A>
 
-      <span class={styles.location}>Route: {route()}</span>
+      <span class={styles.location}>{route()}</span>
     </div>
   )
 }
 
 
-function ThumbPane() {
+function AssetsPane() {
   return (
-    <div class={styles.thumb_pane}></div>
+    <div class={styles.assets_pane}></div>
   )
 }
-function AssetPane() {
+function ImagePane() {
   return (
-    <div class={styles.asset_pane}></div>
+    <div class={styles.image_pane}></div>
   )
 }
 

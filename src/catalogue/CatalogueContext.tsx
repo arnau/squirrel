@@ -1,8 +1,20 @@
 import { invoke } from "@tauri-apps/api"
 import { batch, createContext, createSignal, useContext } from "solid-js"
 import { createStore, produce } from "solid-js/store"
-import { Fragment, fromFragment, type Route } from "../aux/route"
-import { Folder, State, StateGround, StateTree, Tree, TreeNode } from "../catalogue/value"
+import type { Route } from "../aux/route"
+import type {
+  EntryId,
+  FolderDetails,
+  Ground,
+  Location,
+  LocationFolders,
+  LocationAssets,
+  LocationAssetPage,
+  FolderMap,
+  State,
+  AssetStore,
+  AssetCursor,
+} from "../catalogue/types"
 
 
 export interface LocateError {
@@ -10,8 +22,6 @@ export interface LocateError {
   newRoute: Route,
   message: string,
 }
-
-type RootList = Array<Folder>
 
 class FetchError extends Error {
   action: string
@@ -24,50 +34,161 @@ class FetchError extends Error {
 
 }
 
+function sizeKB(data: any): number {
+  const size = new TextEncoder().encode(JSON.stringify(data)).length
+
+  return size / 1024
+}
+
+
+
 export const CatalogueContext = createContext()
 export function CatalogueProvider(props: any) {
-  // current catalogue route.
-  const [route, setRoute] = createSignal<Route>("/")
-  const [roots, setRoots] = createSignal<RootList>()
-  const [tree, setTree] = createStore<Tree>({ kind: "Empty" })
+  const [location, setLocation] = createSignal<Location>()
+  const [ground, setGround] = createSignal<Ground>()
+  const [folderMap, setFolderMap] = createStore<FolderMap>({})
   const [state, setState] = createStore<State>({ tree: {}, isDetailsOpen: false })
+  const [folderDetails, setFolderDetails] = createSignal<FolderDetails>()
+  const [assets, setAssets] = createStore<AssetStore>({})
 
   const fetchGround = async () => {
     try {
-      const state: StateGround = await invoke("fetch_ground")
-
-      setRoots(state.roots)
+      const state: Ground = await invoke("locate_ground")
+      setGround(state)
+      console.log(`ground KB`, sizeKB(state))
 
     } catch (error) {
+      console.log(error)
       const message = error as string
       throw (new FetchError(message, "fetchGround"))
     }
   }
 
-  const fetchRoot = async (newRoute: Route) => {
+  const fetchLocation = async (id: EntryId): Promise<Location> => {
     try {
-      const state: StateTree = await invoke("fetch_root", { path: newRoute })
+      const state: Location = await invoke("locate", { id })
 
-      const size = new TextEncoder().encode(JSON.stringify(state)).length
-      const kiloBytes = size / 1024;
+      console.log(`location KB ${id}`, sizeKB(state))
 
-      console.log('KB', kiloBytes)
-
-      batch(() => {
-        setTree(state.value)
-        setRoute(newRoute)
-      })
-
+      return state
     } catch (error) {
-      throw (new FetchError((error as Error).message, "fetchRoot"))
+      console.log(error)
+      const message = error as string
+      throw (new FetchError(message, "locate"))
     }
   }
 
-  const resetRoot = (newRoute: Route) => {
+  const fetchLocationFolders = async (id: EntryId): Promise<LocationFolders> => {
+    try {
+      const state: LocationFolders = await invoke("locate_folders", { id })
+
+      console.log(`location folders KB ${id}`, sizeKB(state))
+
+      return state
+    } catch (error) {
+      console.log(error)
+      const message = error as string
+      throw (new FetchError(message, "locate"))
+    }
+  }
+
+  const fetchLocationAssetPage = async (id: EntryId, cursor: AssetCursor): Promise<LocationAssetPage> => {
+    try {
+      const state: LocationAssetPage = await invoke("locate_page", { id, cursor })
+
+      console.log(`location assets page KB ${id}`, sizeKB(state))
+
+      return state
+    } catch (error) {
+      console.log(error)
+      const message = error as string
+      throw (new FetchError(message, "locate"))
+    }
+  }
+
+  const fetchFolderDetails = async (id: EntryId) => {
+    try {
+      const state: FolderDetails = await invoke("fetch_folder_details", { id })
+      console.log(`folder details KB ${id}`, sizeKB(state))
+      setFolderDetails(state)
+    } catch (error) {
+      console.log(error)
+      throw (new FetchError((error as Error).message, "fetchFolderDetails"))
+    }
+  }
+
+  const locate = async (id: EntryId) => {
+    const location = await fetchLocation(id)
+    const folders = await fetchLocationFolders(id)
+    // TODO: Add assets
+
     batch(() => {
-      setTree({ kind: "Empty", path: undefined, children: undefined })
-      setState({ tree: {} })
-      setRoute(newRoute)
+      setFolderMap(location.id, folders)
+      setLocation(location)
+    })
+  }
+
+  // Fetch any missing ancestor.
+  const rehydrate = async () => {
+    const ancestors = location()!.trail
+
+    if (ground() === undefined) {
+      await fetchGround()
+    }
+
+    for (const ancestorId of ancestors) {
+      if (folderMap[ancestorId] === undefined) {
+        const folders = await fetchLocationFolders(ancestorId)
+
+        setFolderMap(ancestorId, folders)
+        setState('tree',
+          produce(state => {
+            state[ancestorId] = { isOpen: true }
+          })
+        )
+      }
+    }
+  }
+
+  const navigate = (newId: EntryId) => {
+    if (location()?.id === newId) { return }
+
+    if (newId === "") {
+      batch(async () => {
+        await fetchGround()
+        setLocation({
+          id: "",
+          path: "/",
+          trail: [],
+        })
+      })
+
+    } else {
+      batch(async () => {
+        await locate(newId)
+        await rehydrate()
+        await fetchFolderDetails(newId)
+          .catch((err) => console.error(err.message))
+      })
+    }
+  }
+
+  const toggleTreeNode = (newId: EntryId) => {
+    batch(async () => {
+      // Toggling might require an initial fetch if the data is not yet in place.
+      if (folderMap[newId] === undefined) {
+        const data = await fetchLocationFolders(newId)
+        setFolderMap(newId, data)
+      }
+
+      setState("tree",
+        produce(state => {
+          state[newId] =
+            (state[newId] === undefined)
+              ? { isOpen: true }
+              : { isOpen: !state[newId].isOpen }
+        })
+      )
     })
   }
 
@@ -75,47 +196,30 @@ export function CatalogueProvider(props: any) {
   const value = [
     // read
     {
-      route,
-      roots,
-      tree,
+      location,
+      ground,
+      folderMap,
       state,
+      folderDetails,
+
+      // A route is the composition of scope e.g.`/catalogue` and path.
+      // TODO: Must find a way to disambiguate that does not use UUIDs.
+      route() {
+        return location() === undefined
+          ? `loading`
+          : `/catalogue${location()?.path}`
+      },
     },
 
     // write
     {
+      navigate,
       fetchGround,
-      fetchRoot,
-      resetRoot,
-
-      setRouteFromFragment(fragment: Fragment) {
-        const newRoute = fromFragment(fragment)
-        if (newRoute !== route()) {
-          setRoute(newRoute)
-        }
-      },
+      fetchFolderDetails,
+      toggleTreeNode,
 
       toggleFolderDetails() {
         setState('isDetailsOpen', s => !s)
-      },
-
-      toggleRoot(newRoute: Route) {
-        (tree as TreeNode).path === newRoute
-          ? resetRoot(newRoute)
-          : fetchRoot(newRoute)
-      },
-
-      toggleTreeNode(newRoute: Route) {
-        setState('tree',
-          produce(treeState => {
-            let state = treeState[newRoute]
-
-            if (state === undefined) {
-              treeState[newRoute] = { isOpen: true }
-            } else {
-              treeState[newRoute].isOpen = !state.isOpen
-            }
-          })
-        )
       },
     }
   ]

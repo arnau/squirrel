@@ -34,6 +34,8 @@ CREATE TABLE IF NOT EXISTS root (
     FOREIGN KEY (source_id) REFERENCES source (id)
 );
 
+CREATE INDEX idx_root_path ON root (path);
+
 -- A file system entry. Either a folder or a file.
 CREATE TABLE IF NOT EXISTS entry (
     -- id_global
@@ -53,6 +55,7 @@ CREATE TABLE IF NOT EXISTS entry (
     FOREIGN KEY (source_id) REFERENCES source (id)
 );
 
+CREATE INDEX idx_entry_path ON entry (path);
 
 -- Any entry that is a file and is an image
 CREATE TABLE IF NOT EXISTS asset (
@@ -82,6 +85,8 @@ CREATE TABLE IF NOT EXISTS asset (
     FOREIGN KEY (entry_id) REFERENCES entry (id)
 );
 
+CREATE INDEX idx_asset_entry_id ON asset (entry_id);
+
 -- event log
 CREATE TABLE IF NOT EXISTS event (
     data   text NOT NULL,
@@ -89,3 +94,5 @@ CREATE TABLE IF NOT EXISTS event (
     squirrel_version text AS (json_extract(data, '$.squirrel_version')),
     action text AS (json_extract(data, '$.action'))
 );
+
+CREATE INDEX idx_event_stamp ON asset (stamp);

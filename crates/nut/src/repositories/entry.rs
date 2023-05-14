@@ -49,4 +49,50 @@ impl EntryRepository {
 
         Storage::get_one_maybe(conn, query, params![id], Entry::from_row)
     }
+
+    // TODO: Should this be here or in a different repo?
+    pub fn find_folder_count<C>(conn: &C, id: &str) -> Result<usize>
+    where
+        C: Deref<Target = Connection>,
+    {
+        let query = r#"
+        SELECT
+            count(1)
+        FROM
+            entry AS asset
+        WHERE
+            parent_id = ?
+        AND
+            kind = 'folder'
+        "#;
+
+        Storage::get_one(conn, query, params![id], |row| {
+            let count: usize = row.get(0)?;
+
+            Ok(count)
+        })
+    }
+
+    // TODO: Should this be here or in a different repo?
+    pub fn find_asset_count<C>(conn: &C, id: &str) -> Result<usize>
+    where
+        C: Deref<Target = Connection>,
+    {
+        let query = r#"
+        SELECT
+            count(1)
+        FROM
+            entry AS asset
+        WHERE
+            parent_id = ?
+        AND
+            kind = 'file'
+        "#;
+
+        Storage::get_one(conn, query, params![id], |row| {
+            let count: usize = row.get(0)?;
+
+            Ok(count)
+        })
+    }
 }

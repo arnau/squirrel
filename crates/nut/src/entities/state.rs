@@ -1,96 +1,83 @@
 use super::{
     asset::{AssetId, AssetMetadata},
-    location::Location,
+    entry::{EntryId, EntryPath},
 };
 use serde::{Deserialize, Serialize};
 
-/// Represents the UI state for a given location.
-///
-///
-/// ## Singularity: the "home", where no root is selected. aka "/"
-///
-/// ```nocode
-/// State::Catalogue {
-///     location: vec![], // empty
-///     roots: vec![...], // all roots
-///     folders: vec![], // empty
-///     assets: vec![], // empty
-/// }
-/// ```
-///
-/// ## Root: e.g. "/2021/"
-///
-/// ```nocode
-/// State::Catalogue {
-///     location: vec![Stem::Folder { id: "xxx", path: "/2021/" }], // empty
-///     roots: vec!["/2021/", "/2022/"], // all roots
-///     folders: vec![], // empty
-///     assets: vec![], // empty
-/// }
-/// ```
+// TODO: either EntryId | AssetId
+pub type LocationId = String;
+// TODO: either EntryPath or EntryPath+AssetId (copies need a fake path)
+pub type LocationPath = String;
+
+/// A UI catalogue entry
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(tag = "kind")]
-pub enum State {
-    /// A state for the catalogue.
-    Catalogue {
-        // The data for the current path
-        location: Location,
-        // All possible roots.
-        roots: Vec<Folder>,
-        // The folders hanging from the location root.
-        folders: Vec<Folder>,
-        // The assets under the selected folder. Thumbnails are retrieved independently.
-        assets: Vec<Asset>,
-    },
-
-    Route {
-        location: Location,
-        /// A page of up to n assets.
-        assets: Vec<Asset>,
-        total_assets: usize,
-    },
-
-    /// A state for the catalogue ground. The Ground exposes the available roots.
-    ///
-    /// Its path is "/".
-    Ground {
-        roots: Vec<Folder>,
-    },
-
-    /// A state for a root tree.
-    Tree {
-        path: Path,
-        value: Tree,
-    },
-
-    /// A state for the config.
-    Config {},
+pub struct Location {
+    pub id: LocationId,
+    pub path: LocationPath,
+    // TODO: Trail must contain only ancestors. So it never has AssetId.
+    pub trail: Vec<EntryId>,
 }
 
-type Path = String;
+/// The list of folders for a location.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct LocationFolders(pub Vec<FolderEntry>);
 
+/// A page of assets for a location.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct LocationAssetPage {
+    /// When the cursor is `Option::None`, it's the last page.
+    pub next_cursor: Option<AssetCursor>,
+    pub data: Vec<Asset>,
+}
+
+/// The list of roots for the catalogue.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Ground(pub Vec<FolderEntry>);
+
+/// A UI tree item.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(tag = "kind")]
-pub enum Tree {
-    Leaf {
-        path: Path,
-    },
-    Node {
-        path: Path,
-        children: Vec<Box<Tree>>,
-    },
+pub struct FolderEntry {
+    pub id: EntryId,
+    pub path: EntryPath,
+    pub counter: usize,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Folder {
+pub struct FolderDetails {
+    pub id: EntryId,
+    pub path: EntryPath,
+    pub source: Source,
+    pub root: Root,
+    pub folder_count: usize,
+    pub asset_count: usize,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Source {
     pub id: String,
+    pub name: String,
+    pub path: String,
+    pub version: usize,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Root {
+    pub id: String,
+    pub name: String,
     pub path: String,
 }
+
+/// Asset path is a combination of "{entry.path}+{master_id}".
+pub type AssetPath = String;
+
+/// A cursor for asset pages based on `AssetPath`. See `StateRepository::get_asset_page`
+pub type AssetCursor = AssetPath;
+
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Asset {
     pub id: AssetId,
-    pub path: String,
+    pub path: AssetPath,
     pub master_id: Option<AssetId>,
     pub metadata: AssetMetadata,
 }

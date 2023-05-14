@@ -14,4 +14,4 @@ pub type Version = [u16; 3];
 // 3. Patch
 pub const VERSION: Version = [0, 1, 0];
 
-pub use entities::{Result, Storage, State, Location};
+pub use entities::{Result, Storage};

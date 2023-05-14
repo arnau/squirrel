@@ -24,6 +24,7 @@ base64 = "0.21"
 nut = { path = "../crates/nut" }
 chrono = "0.4"
 percent-encoding = "2.2"
+console-subscriber = "0.1.9"
 
 [features]
 # by default Tauri runs in production mode

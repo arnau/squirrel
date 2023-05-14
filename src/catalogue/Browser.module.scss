@@ -31,7 +31,7 @@
   text-align: center;
 }
 
-.asset_pane {
+.image_pane {
   @include pane;
 
   grid-column: span 1;
@@ -44,7 +44,8 @@
 
   grid-column: span 1;
   grid-row: span 5;
-  overflow-y: auto;
+  // overflow-y: auto;
+  overflow: hidden;
 }
 
 .folder_tree {
@@ -64,6 +65,7 @@
 
 .folder_details {
   border-top: 4px solid var(--grey800);
+  font-size: 14px;
 }
 
 .folder_details h1 {
@@ -75,6 +77,14 @@
   color: var(--grey400);
   background-color: var(--grey605);
   border-bottom: 1px solid var(--grey700)
+}
+.folder_details ul {
+  overflow: auto;
+  width: 300px;
+  height: 100%;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
 }
 
 .folder_tree ul {
@@ -131,7 +141,7 @@
   color: var(--grey500);
 }
 
-.thumb_pane {
+.assets_pane {
   @include pane;
 
   grid-column: span 1;
