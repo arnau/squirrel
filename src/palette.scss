@@ -1,13 +1,20 @@
 :root {
-  --grey300: #B0B0B0;
-  --grey400: #909090;
-  --grey500: #707070;
-  --grey600: #505050;
-  --grey605: #434343;
-  --grey700: #303030;
-  --grey800: #202020;
-  --grey900: #101010;
+  --grey100: lab(10% 0 0);
+  --grey200: lab(20% 0 0);
+  --grey300: lab(30% 0 0);
+  --grey400: lab(40% 0 0);
+  --grey500: lab(50% 0 0);
+  --grey600: lab(60% 0 0);
+  --grey700: lab(70% 0 0);
+  --grey800: lab(80% 0 0);
+  --grey900: lab(90% 0 0);
 
-  --neutral: var(--grey600);
-  --foreground: var(--grey300);
+
+  // --neutral: var(--grey500);
+  --neutral: lab(50% 0 0);
+  --background: var(--grey200);
+  --background-alt: var(--grey100);
+  --foreground: var(--grey800);
+  --highlighted: var(--grey400);
+  --selected: var(--grey300);
 }

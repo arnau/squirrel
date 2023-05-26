@@ -63,8 +63,12 @@ function Folder(props: any) {
 
 function Action(props: any) {
   const [{ location }, { toggleTreeNode }]: any = useCatalogue()
-  const text = () => lastSegment(props.path)
-  const isSelected = () => props.id === location()?.id
+  const text = () =>
+    lastSegment(props.path)
+  const trail = () =>
+    location().trail ?? []
+  const isSelected = () =>
+    props.id === location()?.id || (location().kind === "Asset" && props.id === trail()[trail().length - 1])
   const wrapClassList = () => ({
     [styles.selected]: isSelected(),
     [styles.tree_action]: true,

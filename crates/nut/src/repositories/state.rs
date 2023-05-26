@@ -1,6 +1,5 @@
-use crate::entities::asset::{AssetMetadata, AssetId};
-use crate::entities::entry::{EntryId, EntryPath};
-use crate::entities::state::{Asset, AssetCursor, FolderEntry, AssetPath};
+use crate::entities::asset::{AssetId, AssetMetadata};
+use crate::entities::state::{Asset, AssetCursor, AssetPath, FolderEntry, FolderId, FolderPath};
 use crate::entities::storage::{params, Connection, Storage};
 use crate::entities::Result;
 use crate::repositories::Repository;
@@ -11,7 +10,7 @@ pub struct StateRepository<'c, Conn: Deref<Target = Connection>>(pub &'c Conn);
 impl<'c, Conn: Deref<Target = Connection>> Repository for StateRepository<'c, Conn> {}
 
 impl<'c, Conn: Deref<Target = Connection>> StateRepository<'c, Conn> {
-    pub fn get_folders(&self, parent_id: &str) -> Result<Vec<FolderEntry>> {
+    pub fn get_folders(&self, parent_id: &FolderId) -> Result<Vec<FolderEntry>> {
         let query = r#"
         SELECT
             id,
@@ -36,71 +35,135 @@ impl<'c, Conn: Deref<Target = Connection>> StateRepository<'c, Conn> {
         "#;
 
         Storage::get(self.0, query, params![parent_id], |row| {
-            let id: String = row.get(0)?;
-            let path: String = row.get(1)?;
+            let id: FolderId = row.get(0)?;
+            let path: FolderPath = row.get(1)?;
             let counter: usize = row.get(2)?;
 
             Ok(FolderEntry { id, path, counter })
         })
     }
 
-    pub fn get_trail(&self, id: &str) -> Result<Vec<EntryId>> {
+    pub fn get_folder_trail(&self, id: &FolderId) -> Result<Vec<FolderId>> {
         let query = r#"
-        WITH RECURSIVE stem(id, path, parent_id) AS (
-        SELECT
-            entry.id,
-            entry.path,
-            entry.parent_id
-        FROM
-            entry
-        WHERE
-            id = ?
-        UNION
-        SELECT
-            entry.id,
-            entry.path,
-            entry.parent_id
-        FROM
-            entry
-        INNER JOIN
-            stem
-            ON
-                stem.parent_id = entry.id
-        )
-        SELECT
-            id
-        FROM
-            stem
-        WHERE
-            stem.id <> ?
-        ORDER BY
-            path ASC
+            WITH RECURSIVE mark(idx, id, parent_id) AS (
+            SELECT
+                1 AS idx,
+                entry.id,
+                entry.parent_id
+            FROM
+                entry
+            WHERE
+                id = ?1
+            UNION ALL
+            SELECT
+                mark.idx + 1,
+                entry.id,
+                entry.parent_id
+            FROM
+                entry
+            INNER JOIN
+                mark
+                ON
+                    mark.parent_id = entry.id
+            )
+            SELECT
+                mark.id
+            FROM
+                mark
+            WHERE
+                mark.idx > 1
+            ORDER BY
+                mark.idx DESC
         "#;
 
         Storage::get(self.0, query, params![id], |row| {
-            let id: String = row.get(0)?;
+            let id: FolderId = row.get(0)?;
 
             Ok(id)
         })
     }
 
-    pub fn get_location_path(&self, id: &EntryId) -> Result<EntryId> {
+    pub fn get_asset_trail(&self, id: &AssetId) -> Result<Vec<FolderId>> {
         let query = r#"
-        SELECT
-            entry.path
-        FROM
-            entry
-        WHERE
-            id = ?
+            WITH RECURSIVE mark(idx, kind, id, parent_id) AS (
+                SELECT
+                    1 AS idx,
+                    'asset' AS kind,
+                    asset.id,
+                    asset.entry_id
+                FROM
+                    asset
+                INNER JOIN
+                    entry ON entry.id = asset.entry_id
+                WHERE
+                    asset.id = ?1
+
+            UNION ALL
+
+                SELECT
+                    mark.idx + 1,
+                    entry.kind,
+                    entry.id,
+                    entry.parent_id
+                FROM
+                    entry
+                INNER JOIN
+                    mark
+                    ON
+                        mark.parent_id = entry.id
+            )
+            SELECT
+                mark.id
+            FROM
+                mark
+            WHERE
+                mark.kind == 'folder'
+            ORDER BY
+                mark.idx DESC
+        "#;
+
+        Storage::get(self.0, query, params![id], |row| {
+            let id: FolderId = row.get(0)?;
+
+            Ok(id)
+        })
+    }
+
+    pub fn get_folder_path(&self, id: &FolderId) -> Result<FolderPath> {
+        let query = r#"
+            SELECT
+                entry.path AS path
+            FROM
+                entry
+            WHERE
+                entry.id = ?1
         "#;
 
         Storage::get_one(self.0, query, params![id], |row| {
-            let path: EntryPath = row.get(0)?;
+            let path: FolderPath = row.get(0)?;
 
             Ok(path)
         })
     }
 
+    pub fn get_asset_path(&self, id: &AssetId) -> Result<AssetPath> {
+        let query = r#"
+            SELECT
+                iif(asset.master_id is null, entry.path, entry.path || '#' || asset.id) AS path
+            FROM
+                asset
+            INNER JOIN
+                entry ON entry.id = asset.entry_id
+            WHERE
+                asset.id = ?1
+        "#;
+
+        Storage::get_one(self.0, query, params![id], |row| {
+            let path: AssetPath = row.get(0)?;
+
+            Ok(path)
+})
+    }
 
     pub fn get_roots(&self) -> Result<Vec<FolderEntry>> {
         let query = r#"
@@ -189,7 +252,7 @@ impl<'c, Conn: Deref<Target = Connection>> StateRepository<'c, Conn> {
 
     pub fn get_asset_page(
         &self,
-        parent_id: &EntryId,
+        parent_id: &FolderId,
         cursor: Option<AssetCursor>,
     ) -> Result<(Option<AssetCursor>, Vec<Asset>)> {
         let cursor_filter = if let Some(cursor) = cursor {
@@ -197,10 +260,11 @@ impl<'c, Conn: Deref<Target = Connection>> StateRepository<'c, Conn> {
         } else {
             format!("")
         };
-        let query = format!(r#"
+        let query = format!(
+            r#"
         SELECT
             asset.id,
-            ifnull(entry.path || '+' || asset.master_id, entry.path) AS asset_path,
+            iif(master_id is null, entry.path, entry.path || '#' || asset.id) AS asset_path,
             asset.rating,
             asset.flag,
             asset.label,
@@ -221,7 +285,8 @@ impl<'c, Conn: Deref<Target = Connection>> StateRepository<'c, Conn> {
             asset_path ASC
         LIMIT
             100
-        "#);
+        "#
+        );
 
         let assets = Storage::get(self.0, &query, params![parent_id], |row| {
             let id: AssetId = row.get(0)?;

@@ -1,21 +1,29 @@
-use super::{
-    asset::{AssetId, AssetMetadata},
-    entry::{EntryId, EntryPath},
-};
+use super::asset::{AssetId, AssetMetadata};
 use serde::{Deserialize, Serialize};
 
-// TODO: either EntryId | AssetId
-pub type LocationId = String;
-// TODO: either EntryPath or EntryPath+AssetId (copies need a fake path)
-pub type LocationPath = String;
+pub type FolderId = String;
+pub type FolderPath = String;
+
+// Should always be ""
+pub type GroundId = String;
 
 /// A UI catalogue entry
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Location {
-    pub id: LocationId,
-    pub path: LocationPath,
-    // TODO: Trail must contain only ancestors. So it never has AssetId.
-    pub trail: Vec<EntryId>,
+#[serde(tag = "kind")]
+pub enum Location {
+    Ground {
+        id: GroundId,
+    },
+    Folder {
+        id: FolderId,
+        path: FolderPath,
+        trail: Vec<FolderId>,
+    },
+    Asset {
+        id: AssetId,
+        path: AssetPath,
+        trail: Vec<FolderId>,
+    },
 }
 
 /// The list of folders for a location.
@@ -37,15 +45,15 @@ pub struct Ground(pub Vec<FolderEntry>);
 /// A UI tree item.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct FolderEntry {
-    pub id: EntryId,
-    pub path: EntryPath,
+    pub id: FolderId,
+    pub path: FolderPath,
     pub counter: usize,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct FolderDetails {
-    pub id: EntryId,
-    pub path: EntryPath,
+    pub id: FolderId,
+    pub path: FolderPath,
     pub source: Source,
     pub root: Root,
     pub folder_count: usize,
@@ -72,7 +80,6 @@ pub type AssetPath = String;
 
 /// A cursor for asset pages based on `AssetPath`. See `StateRepository::get_asset_page`
 pub type AssetCursor = AssetPath;
-
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Asset {

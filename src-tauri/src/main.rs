@@ -143,7 +143,7 @@ async fn fetch_folder_details(id: String, pool: tauri::State<'_, Pool>) -> Resul
 // }
 
 #[tauri::command]
-async fn thumbnail(id: AssetId, pool: tauri::State<'_, Pool>) -> Result<String, String> {
+async fn fetch_thumbnail(id: AssetId, pool: tauri::State<'_, Pool>) -> Result<String, String> {
     let data = if let Ok(blob) = navigator::get_thumbnail(&pool, &id) {
         blob.data
     } else {
@@ -260,7 +260,7 @@ fn main() -> anyhow::Result<()> {
             locate_asset_page,
             fetch_folder_details,
             connect,
-            thumbnail,
+            fetch_thumbnail,
             inspect_logs,
             prune_logs,
             open_inspector,

@@ -6,12 +6,13 @@
   grid-template-rows: 50px repeat(5, 1fr);
   grid-template-columns: 300px 300px minmax(600px, 1fr);
   height: 100vh;
-  background-color: var(--grey800);
+  background-color: var(--background-alt);
   min-width: 900px;
 }
 
 @mixin pane {
-  background-color: var(--neutral);
+  background-color: var(--background);
+  border-radius: 2px;
 }
 
 .locator_pane {
@@ -20,7 +21,6 @@
   grid-column: span 3;
   grid-row: span 1;
   padding: calc(var(--base-unit) * 2) calc(var(--base-unit) * 4);
-  background-color: var(--grey700);
 
   display: flex;
   align-items: stretch;
@@ -29,14 +29,6 @@
 .location {
   flex: 2;
   text-align: center;
-}
-
-.image_pane {
-  @include pane;
-
-  grid-column: span 1;
-  grid-row: span 5;
-  position: relative;
 }
 
 .tree_pane {
@@ -64,7 +56,7 @@
 
 
 .folder_details {
-  border-top: 4px solid var(--grey800);
+  border-top: 4px solid var(--background-alt);
   font-size: 14px;
 }
 
@@ -74,10 +66,11 @@
   padding: 8px;
   font-weight: normal;
   cursor: pointer;
-  color: var(--grey400);
-  background-color: var(--grey605);
-  border-bottom: 1px solid var(--grey700)
+  color: var(--grey800);
+  background-color: var(--grey300);
+  border-bottom: 1px solid var(--background-alt)
 }
+
 .folder_details ul {
   overflow: auto;
   width: 300px;
@@ -102,7 +95,7 @@
 }
 
 .tree_pane .selected {
-  background-color: var(--grey700);
+  background-color: var(--selected);
 }
 
 .tree_pane .tree_action {
@@ -116,7 +109,7 @@
 }
 
 .tree_pane .tree_action:hover {
-  background-color: var(--grey900);
+  background-color: var(--highlighted);
   // transition: background-color 1s ease-in;
 }
 
@@ -131,15 +124,18 @@
 .tree_pane button {
   background-color: transparent;
   border: none;
-  color: var(--grey300);
+  color: var(--grey600);
   margin: 0;
   padding: 0;
   cursor: pointer;
 }
 
 .tree_pane .noop {
-  color: var(--grey500);
+  color: var(--grey400);
 }
+
+
+/** Assets Pane */
 
 .assets_pane {
   @include pane;
@@ -147,4 +143,132 @@
   grid-column: span 1;
   grid-row: span 5;
   overflow-y: auto;
+}
+
+.assets_pane.empty {
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+}
+
+.assets_pane .asset {
+  border-block-end: 4px solid var(--background-alt);
+  font-size: 14px;
+  text-decoration: none;
+
+  display: grid;
+  grid-template-columns: 120px 1fr 2fr;
+  grid-template-rows: 28px repeat(5, 1fr);
+
+  /* XXX: for performance reasons */
+  height: 162px;
+  width: 300px;
+}
+
+.assets_pane .asset:hover {
+  background-color: var(--highlighted);
+}
+
+.assets_pane .asset.selected {
+  background-color: var(--selected);
+}
+
+.assets_pane .asset.loading {
+  place-items: center;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+}
+
+.assets_pane .header {
+  border-block-end: 1px solid var(--background-alt);
+  overflow: hidden;
+  padding: 4px;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+  white-space: nowrap;
+
+  grid-column: span 3;
+  grid-row: span 1;
+}
+
+.assets_pane .asset .header > .badge {
+  background-color: black;
+  border-radius: 2px;
+  color: var(--grey600);
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 4px;
+  margin-inline-end: 4px;
+  text-transform: uppercase;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.thumbnail {
+  grid-row: span 5;
+  display: grid;
+  place-items: center;
+}
+
+.thumbnail img {
+  object-fit: contain;
+  max-width: 120px;
+  max-height: 120px;
+}
+
+.assets_pane .asset .label,
+.assets_pane .asset .datum {
+  padding: 4px;
+  border-inline-start: 1px solid var(--background-alt);
+  border-block-end: 1px solid var(--background-alt);
+}
+
+.assets_pane .asset .label:nth-last-of-type(2),
+.assets_pane .asset .datum:nth-last-of-type(1) {
+  border-block-end: none;
+}
+
+
+/** image pane */
+.image_pane {
+  @include pane;
+
+  grid-column: span 1;
+  grid-row: span 5;
+  position: relative;
+}
+
+.image_pane.selected {
+  padding: 8px;
+  background-color: var(--neutral);
+}
+
+.image_pane img {
+  display: block;
+  object-fit: contain;
+  max-height: 100%;
+  max-width: 100%;
+}
+
+.maximise_button {
+  background-color: var(--grey200);
+  border: 2px solid var(--grey300);
+  border-radius: 4px;
+  color: var(--grey600);
+  cursor: pointer;
+  display: block;
+  margin: 0;
+  padding: 4px;
+  position: absolute;
+  right: 10px;
+  top: 10px;
+}
+.maximise_button:hover {
+  background-color: var(--grey500);
+  color: var(--grey100);
+}
+
+.maximise_button svg {
+  display: block;
 }

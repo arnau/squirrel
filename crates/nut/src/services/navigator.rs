@@ -1,7 +1,6 @@
 use crate::entities::asset::{AssetId, Blob, BlobSize};
-use crate::entities::entry::EntryId;
 use crate::entities::state::{
-    self, AssetCursor, FolderDetails, Ground, Location, LocationAssetPage, LocationFolders,
+    self, AssetCursor, FolderDetails, Ground, Location, LocationAssetPage, LocationFolders, FolderId,
 };
 use crate::entities::storage::{Connection, Pool};
 use crate::entities::{Event, Result};
@@ -14,17 +13,35 @@ use serde_json::json;
 use std::ops::Deref;
 
 /// Attempts to locate the resource for the given id.
-pub fn locate(pool: &Pool, id: &EntryId) -> Result<Location> {
+pub fn locate(pool: &Pool, id: &str) -> Result<Location> {
     let mut conn = pool.get()?;
 
     let tx = conn.transaction()?;
     let state_repo = StateRepository(&tx);
-    let trail = state_repo.get_trail(id)?;
-    let path = state_repo.get_location_path(id)?;
-    let state = Location {
-        id: id.to_string(),
-        path,
-        trail,
+
+    let id = id.to_string();
+    let location = if &id == "" {
+        Location::Ground { id }
+    } else {
+        if EntryRepository::find_by_id(&tx, &id)?.is_some() {
+            let path = state_repo.get_folder_path(&id)?;
+            let trail = state_repo.get_folder_trail(&id)?;
+
+            Location::Folder {
+                id,
+                path,
+                trail,
+            }
+        } else {
+            let path = state_repo.get_asset_path(&id)?;
+            let trail = state_repo.get_asset_trail(&id)?;
+
+            Location::Asset {
+                id,
+                path,
+                trail,
+            }
+        }
     };
 
     // TODO: Move out and refactor how to log events.
@@ -40,11 +57,11 @@ pub fn locate(pool: &Pool, id: &EntryId) -> Result<Location> {
 
     tx.commit()?;
 
-    Ok(state)
+    Ok(location)
 }
 
 /// Attempts to get the list of folders for the given entry id.
-pub fn locate_folders(pool: &Pool, parent_id: &EntryId) -> Result<LocationFolders> {
+pub fn locate_folders(pool: &Pool, parent_id: &FolderId) -> Result<LocationFolders> {
     let mut conn = pool.get()?;
     let tx = conn.transaction()?;
 
@@ -62,7 +79,7 @@ pub fn locate_folders(pool: &Pool, parent_id: &EntryId) -> Result<LocationFolder
 /// When the cursor is `Option::None`, the first page is retrieved.
 pub fn locate_asset_page(
     pool: &Pool,
-    parent_id: &EntryId,
+    parent_id: &FolderId,
     cursor: Option<AssetCursor>,
 ) -> Result<LocationAssetPage> {
     let mut conn = pool.get()?;
@@ -146,8 +163,6 @@ where
     Ok(folder_details)
 }
 
-// TODO: start review
-
 /// Get the thumbnail for the given file.
 ///
 /// This is not strictly navigatgion so might be best to move it to another service.
@@ -159,6 +174,7 @@ pub fn get_thumbnail(pool: &Pool, id: &AssetId) -> Result<Blob> {
     Ok(blob)
 }
 
+// TODO: start review
 pub async fn get_async_thumbnail(pool: &Pool, id: &AssetId) -> Result<Blob> {
     let conn = pool.get()?;
     let pyramid = AssetRepository(&conn).get_pyramid(id)?;

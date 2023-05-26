@@ -1,25 +1,46 @@
-import { Route } from "../aux/route";
+/** An identifier for any location */
+export type LocationId = GroundId | FolderId | AssetId
 
-/** An identifier for either a folder or a file. */
-export type EntryId = string
 
-/** A path for an entry. Not to confuse with a `Route` */
-export type EntryPath = string
+/** An identifier for the ground */
+export type GroundId = ""
+
+/** An identifier for a folder */
+export type FolderId = string
+
+/** A path for a folder. Not to confuse with a `Route` */
+export type FolderPath = string
 
 /** A trail from root to leaf for a location. */
-export type Trail = Array<EntryId>
+export type Trail = Array<FolderId>
 
-/** A catalogue entry location. */
-export interface Location {
-  id: EntryId,
-  path: EntryPath,
+export interface GroundLocation {
+  kind: "Ground",
+  id: GroundId,
+}
+
+export interface FolderLocation {
+  kind: "Folder",
+  id: FolderId,
+  path: FolderPath,
   trail: Trail,
 }
 
+export interface AssetLocation {
+  kind: "Asset",
+  id: AssetId,
+  path: AssetPath,
+  trail: Trail,
+}
+
+/** A catalogue entry location. */
+export type Location = GroundLocation | FolderLocation | AssetLocation
+
+
 /** A tree item */
 export interface FolderEntry {
-  id: EntryId,
-  path: EntryPath,
+  id: FolderId,
+  path: FolderPath,
   counter: number,
 }
 
@@ -64,6 +85,7 @@ export type LocationAssets = Array<Asset>
   */
 export interface AssetStore {
   cursor?: AssetCursor,
+  parentId?: FolderId,
   assets?: LocationAssets,
 }
 
@@ -85,18 +107,24 @@ export interface AssetMetadata {
   orientation: string;
 }
 
+/** A thumbnail blob as base64 */
+export type Thumbnail = string
+
+export interface ThumbnailStore {
+  [id: AssetId]: Thumbnail,
+}
 
 
 /** The UI cache for the tree nodes that have been loaded */
 export interface FolderMap {
-  [id: EntryId]: LocationFolders,
+  [id: FolderId]: LocationFolders,
 }
 
 /** The UI state tracking what is visible */
 export interface State {
-  // tree item details
   isDetailsOpen: boolean,
   tree: TreeState,
+  isBrowserFocused: boolean,
 }
 
 /** The folder tree state.
@@ -104,7 +132,7 @@ export interface State {
   * It complements `FolderMap` which holds the actual folder data.
   */
 export interface TreeState {
-  [id: EntryId]: TreeItemState,
+  [id: FolderId]: TreeItemState,
 }
 
 export interface TreeItemState {
@@ -114,8 +142,8 @@ export interface TreeItemState {
 
 /** A metadata set for a folder (see `AssetMetadata` for the other entry type) */
 export interface FolderDetails {
-  id: EntryId,
-  path: EntryPath,
+  id: FolderId,
+  path: FolderPath,
   source: Source,
   root: Root,
   folder_count: number,
@@ -123,9 +151,9 @@ export interface FolderDetails {
 }
 
 export interface Root {
-  id: EntryId,
+  id: string,
   name: string,
-  path: EntryPath,
+  path: string,
 }
 
 export interface Source {

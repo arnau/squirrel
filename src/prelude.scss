@@ -24,5 +24,6 @@ button, input, select, textarea {
 }
 
 a {
-  color: var(--grey300);
+  text-decoration: none;
+  color: var(--foreground);
 }
