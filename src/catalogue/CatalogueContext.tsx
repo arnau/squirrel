@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api"
+import { appWindow } from "@tauri-apps/api/window"
 import { batch, createContext, createSignal, useContext } from "solid-js"
-import { createStore, produce, reconcile, unwrap } from "solid-js/store"
+import { createStore, produce, reconcile } from "solid-js/store"
 import type { Route } from "../aux/route"
 import type {
   FolderId,
@@ -151,7 +152,7 @@ export function CatalogueProvider(props: any) {
   const [state, setState] = createStore<State>({
     tree: {},
     isDetailsOpen: false,
-    isBrowserFocused: false,
+    isImageFullsize: false,
   })
   const [folderDetails, setFolderDetails] = createSignal<FolderDetails>()
 
@@ -201,9 +202,11 @@ export function CatalogueProvider(props: any) {
       setLocation(location)
 
       if (location.kind === "Ground") {
+        appWindow.setTitle("/")
         setGround(await fetchGround())
         resetLocation()
       } else if (location.kind === "Folder") {
+        appWindow.setTitle(location.path)
         const folders = await fetchLocationFolders(id)
         const assetStore = await fetchLocationAssets(id)
         const folderDetails = await fetchFolderDetails(id)
@@ -215,6 +218,7 @@ export function CatalogueProvider(props: any) {
         setFolderDetails(folderDetails)
 
       } else if (location.kind === "Asset") {
+        appWindow.setTitle(location.path)
         restoreLocation(location)
       }
     })
@@ -276,8 +280,8 @@ export function CatalogueProvider(props: any) {
         setState('isDetailsOpen', s => !s)
       },
 
-      toggleBrowserFocus() {
-        setState('isBrowserFocused', s => !s)
+      toggleImageSize() {
+        setState("isImageFullsize", s => !s)
       },
     }
   ]

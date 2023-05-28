@@ -5,6 +5,8 @@ import { A } from "@solidjs/router"
 import { lastSegment } from "../aux/route"
 import { createVisibilityObserver } from "@solid-primitives/intersection-observer"
 import type { Thumbnail } from "./types"
+import { FlagIcon } from "../icons/Flag"
+import { StarIcon } from "../icons/Star"
 
 export function AssetsPane() {
   const [{ assetStore }]: any = useCatalogue()
@@ -60,6 +62,8 @@ function Asset(props: any) {
   let el: HTMLAnchorElement | undefined;
   const useVisibilityObserver = createVisibilityObserver({ threshold: 0.2 })
   const isVisible = useVisibilityObserver(() => el)
+  const tint = () =>
+    metadata().label?.toLowerCase() ?? "neutral"
 
   const classList = () => ({
     [styles.selected]: isSelected(),
@@ -77,14 +81,16 @@ function Asset(props: any) {
     >
 
       <Show when={isVisible()} fallback={<div>Loading...</div>}>
-        <Header isVirtual={isVirtual}>{text}</Header>
+        <Header isVirtual={isVirtual} tint={tint()}>{text}</Header>
+        <Flag status={metadata().flag} tint={tint()} />
+
         <Thumbnail id={props.id} isVisible={isVisible} />
 
-        <Metapoint label="Format">{metadata().format}</Metapoint>
-        <Metapoint label="Stars">{metadata().rating}</Metapoint>
-        <Metapoint label="Flagged">{metadata().flag ? "Yes" : "No"}</Metapoint>
-        <Metapoint label="Colour">{metadata().label}</Metapoint>
-        <Metapoint label="Size" className="last">{`${metadata().width} x ${metadata().height}`}</Metapoint>
+        <Body>
+          <Rating number={metadata().rating} />
+          <Metapoint label="Format">{metadata().format}</Metapoint>
+          <Metapoint label="Size" className="last">{`${metadata().width} x ${metadata().height}`}</Metapoint>
+        </Body>
       </Show>
     </A>
   )
@@ -93,11 +99,31 @@ function Asset(props: any) {
 
 function Header(props: any) {
   const value = children(() => props.children);
+  const classList = () => ({
+    [styles.header]: true,
+    [styles[props.tint]]: true,
+  })
 
   return (
-    <div class={styles.header}>
+    <div classList={classList()}>
       <Show when={props.isVirtual()} fallback={value()}>
         <span class={styles.badge}>virtual</span> {value()}
+      </Show>
+    </div>
+  )
+}
+
+function Flag(props: any) {
+  const classList = () => ({
+    [styles.flag]: true,
+    [styles[props.tint]]: true,
+  })
+
+
+  return (
+    <div classList={classList()}>
+      <Show when={props.status}>
+        <FlagIcon size="22" fill={true} />
       </Show>
     </div>
   )
@@ -129,11 +155,34 @@ function Thumbnail(props: any) {
   )
 }
 
+function Body(props: any) {
+  return (
+    <div class={styles.body}>
+      {props.children}
+    </div>
+  )
+}
+
+function Rating(props: any) {
+  return (
+    <>
+      <div class={styles.label}>Rating</div>
+      <div class={styles.value}>
+        <div class={styles.rating}>
+          <For each={Array(props.number).fill(0)}>
+            {_ => <StarIcon fill={true} size={16} />}
+          </For>
+        </div>
+      </div>
+    </>
+  )
+}
+
 function Metapoint(props: any) {
   return (
     <>
       <div class={styles.label}>{props.label}</div>
-      <div class={styles.datum}>{props.children}</div>
+      <div class={styles.value}>{props.children}</div>
     </>
   )
 }

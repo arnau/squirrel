@@ -3,8 +3,11 @@
 .grid {
   display: grid;
   gap: var(--base-unit);
-  grid-template-rows: 50px repeat(5, 1fr);
-  grid-template-columns: 300px 300px minmax(600px, 1fr);
+  grid-template:
+    "locator_pane locator_pane image_pane" 50px
+    "tree_pane    assets_pane  image_pane" 1fr
+    / 300px 300px minmax(600px, 1fr)
+  ;
   height: 100vh;
   background-color: var(--background-alt);
   min-width: 900px;
@@ -18,8 +21,7 @@
 .locator_pane {
   @include pane;
 
-  grid-column: span 3;
-  grid-row: span 1;
+  grid-area: locator_pane;
   padding: calc(var(--base-unit) * 2) calc(var(--base-unit) * 4);
 
   display: flex;
@@ -34,9 +36,7 @@
 .tree_pane {
   @include pane;
 
-  grid-column: span 1;
-  grid-row: span 5;
-  // overflow-y: auto;
+  grid-area: tree_pane;
   overflow: hidden;
 }
 
@@ -140,8 +140,7 @@
 .assets_pane {
   @include pane;
 
-  grid-column: span 1;
-  grid-row: span 5;
+  grid-area: assets_pane;
   overflow-y: auto;
 }
 
@@ -157,8 +156,13 @@
   text-decoration: none;
 
   display: grid;
-  grid-template-columns: 120px 1fr 2fr;
-  grid-template-rows: 28px repeat(5, 1fr);
+  // grid-template-columns: 120px 1fr 2fr;
+  // grid-template-rows: 28px repeat(5, 1fr);
+  grid-template:
+  "header header flag" 28px
+  "thumb  body body"
+  / 120px 1fr 28px
+  ;
 
   /* XXX: for performance reasons */
   height: 162px;
@@ -186,9 +190,27 @@
   text-overflow: ellipsis;
   vertical-align: middle;
   white-space: nowrap;
+  grid-area: header;
+}
 
-  grid-column: span 3;
-  grid-row: span 1;
+.red {
+  background-color: rgba(128, 0, 0, 0.2);
+}
+
+.purple {
+  background-color: rgba(128, 0, 128, 0.2);
+}
+
+.blue {
+  background-color: rgba(0, 0, 139, 0.2);
+}
+
+.green {
+  background-color: rgba(34, 139, 34, 0.2);
+}
+
+.yellow {
+  background-color: rgba(184, 134, 11, 0.2);
 }
 
 .assets_pane .asset .header > .badge {
@@ -205,8 +227,16 @@
   white-space: nowrap;
 }
 
+.assets_pane .flag {
+  grid-area: flag;
+  border-block-end: 1px solid var(--background-alt);
+  display: grid;
+  place-items: center;
+}
+
 .thumbnail {
-  grid-row: span 5;
+  // grid-row: span 5;
+  grid-area: thumb;
   display: grid;
   place-items: center;
 }
@@ -217,41 +247,85 @@
   max-height: 120px;
 }
 
+.assets_pane .asset .body {
+  grid-area: body;
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+}
+
+.assets_pane .asset .rating svg {
+  display: inline-block;
+}
+
 .assets_pane .asset .label,
-.assets_pane .asset .datum {
-  padding: 4px;
+.assets_pane .asset .value {
+  padding: 4px 8px;
   border-inline-start: 1px solid var(--background-alt);
   border-block-end: 1px solid var(--background-alt);
+  display: grid;
+  align-items: center;
 }
 
 .assets_pane .asset .label:nth-last-of-type(2),
-.assets_pane .asset .datum:nth-last-of-type(1) {
+.assets_pane .asset .value:nth-last-of-type(1) {
   border-block-end: none;
 }
+
+
 
 
 /** image pane */
 .image_pane {
   @include pane;
 
-  grid-column: span 1;
-  grid-row: span 5;
-  position: relative;
+  grid-area: image_pane;
 }
 
 .image_pane.selected {
   padding: 8px;
   background-color: var(--neutral);
+
+  display: grid;
+  grid-template-rows: calc(36px + 10px) 1fr;
+  gap: 8px;
 }
 
-.image_pane img {
+.image_pane .canvas {
+  overflow: hidden;
+}
+
+.image_pane .canvas.fullsize {
+  overflow: auto;
+  cursor: grab;
+}
+
+.image_pane .canvas img {
   display: block;
   object-fit: contain;
   max-height: 100%;
   max-width: 100%;
 }
 
-.maximise_button {
+.image_pane .canvas.fullsize img {
+  max-height: none;
+  max-width: none;
+}
+
+.image_pane .toolbar {
+  border: 1px solid var(--grey300);
+  border-radius: 2px;
+  padding: 4px;
+
+  display: grid;
+  grid-gap: 8px;
+  grid-template-columns: repeat(auto-fit, 36px);
+}
+
+.toolbar button svg {
+  display: block;
+}
+
+.toolbar button {
   background-color: var(--grey200);
   border: 2px solid var(--grey300);
   border-radius: 4px;
@@ -260,15 +334,9 @@
   display: block;
   margin: 0;
   padding: 4px;
-  position: absolute;
-  right: 10px;
-  top: 10px;
-}
-.maximise_button:hover {
-  background-color: var(--grey500);
-  color: var(--grey100);
 }
 
-.maximise_button svg {
-  display: block;
+.toolbar button:hover {
+  background-color: var(--grey500);
+  color: var(--grey100);
 }

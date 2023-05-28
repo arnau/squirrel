@@ -35,13 +35,10 @@ export function Browser() {
 }
 
 function LocatorPane() {
-  const [{ route }]: any = useCatalogue()
   // <LocatorBar />
   return (
     <div class={styles.locator_pane}>
       <A href="/catalogue/">Catalogue</A>
-
-      <span class={styles.location}>{route()}</span>
     </div>
   )
 }

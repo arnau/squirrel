@@ -124,7 +124,7 @@ export interface FolderMap {
 export interface State {
   isDetailsOpen: boolean,
   tree: TreeState,
-  isBrowserFocused: boolean,
+  isImageFullsize: boolean,
 }
 
 /** The folder tree state.
