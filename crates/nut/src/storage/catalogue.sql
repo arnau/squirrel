@@ -1,14 +1,9 @@
 /* This SQL script defines the schema for the catalogue.
  *
- * Its main purpose is to keep data about files, folders, thumbnails, metadata.
+ * Its main purpose is to keep data about files, folders and assets imported
+ * from LightRoom catalogues.
  */
 
-
--- Metadata about the Squirrel catalogue.
-CREATE TABLE IF NOT EXISTS catalogue_metadata (
-    key   text NOT NULL,
-    value text NOT NULL
-);
 
 -- A source to gather data from.
 CREATE TABLE IF NOT EXISTS source (
@@ -34,7 +29,7 @@ CREATE TABLE IF NOT EXISTS root (
     FOREIGN KEY (source_id) REFERENCES source (id)
 );
 
-CREATE INDEX idx_root_path ON root (path);
+CREATE INDEX IF NOT EXISTS idx_root_path ON root (path);
 
 -- A file system entry. Either a folder or a file.
 CREATE TABLE IF NOT EXISTS entry (
@@ -55,7 +50,7 @@ CREATE TABLE IF NOT EXISTS entry (
     FOREIGN KEY (source_id) REFERENCES source (id)
 );
 
-CREATE INDEX idx_entry_path ON entry (path);
+CREATE INDEX IF NOT EXISTS idx_entry_path ON entry (path);
 
 -- Any entry that is a file and is an image
 CREATE TABLE IF NOT EXISTS asset (
@@ -85,7 +80,7 @@ CREATE TABLE IF NOT EXISTS asset (
     FOREIGN KEY (entry_id) REFERENCES entry (id)
 );
 
-CREATE INDEX idx_asset_entry_id ON asset (entry_id);
+CREATE INDEX IF NOT EXISTS idx_asset_entry_id ON asset (entry_id);
 
 -- event log
 CREATE TABLE IF NOT EXISTS event (
@@ -95,4 +90,4 @@ CREATE TABLE IF NOT EXISTS event (
     action text AS (json_extract(data, '$.action'))
 );
 
-CREATE INDEX idx_event_stamp ON asset (stamp);
+CREATE INDEX IF NOT EXISTS idx_event_stamp ON event (stamp);

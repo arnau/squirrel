@@ -21,7 +21,7 @@ impl CatalogueRepository {
         FROM
             pragma_table_list
         WHERE
-            name = 'catalogue_metadata'
+            name = 'squirrel'
         "#;
 
         Storage::get_one(conn, query, params![], |row| {
@@ -39,7 +39,7 @@ impl CatalogueRepository {
         SELECT
             cast(value as text)
         FROM
-            catalogue_metadata
+            squirrel
         WHERE
             key = 'version'
         "#;
@@ -67,7 +67,7 @@ impl CatalogueRepository {
         C: Deref<Target = Connection>,
     {
         let query = r#"
-            INSERT INTO catalogue_metadata
+            INSERT INTO squirrel
                 (key, value)
             VALUES
                 (?, ?)

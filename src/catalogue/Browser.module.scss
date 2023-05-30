@@ -110,7 +110,6 @@
 
 .tree_pane .tree_action:hover {
   background-color: var(--highlighted);
-  // transition: background-color 1s ease-in;
 }
 
 .tree_pane a {
@@ -142,6 +141,7 @@
 
   grid-area: assets_pane;
   overflow-y: auto;
+  // scroll-snap-type: y proximity;
 }
 
 .assets_pane.empty {
@@ -154,10 +154,9 @@
   border-block-end: 4px solid var(--background-alt);
   font-size: 14px;
   text-decoration: none;
+  // scroll-snap-align: start;
 
   display: grid;
-  // grid-template-columns: 120px 1fr 2fr;
-  // grid-template-rows: 28px repeat(5, 1fr);
   grid-template:
   "header header flag" 28px
   "thumb  body body"
@@ -235,7 +234,6 @@
 }
 
 .thumbnail {
-  // grid-row: span 5;
   grid-area: thumb;
   display: grid;
   place-items: center;

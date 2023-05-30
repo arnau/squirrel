@@ -1,0 +1,111 @@
+@use "../prelude.scss";
+
+.layout {
+  display: grid;
+  gap: var(--base-unit);
+  grid-template:
+    "menu_pane detail_pane" 1fr
+    / 300px minmax(300px, 800px)
+  ;
+
+  height: 100vh;
+  background-color: var(--background-alt);
+  min-width: 600px;
+}
+
+@mixin pane {
+  background-color: var(--background);
+  border-radius: 2px;
+}
+
+/** Menu pane */
+.menu_pane {
+  @include pane;
+}
+
+.menu_pane ul {
+  margin: 64px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  // align-items: stretch;
+  flex-flow: column;
+}
+
+.menu_pane li {
+  margin-inline-start: 24px;
+}
+
+.menu_pane li a {
+  display: block;
+  padding: 16px;
+  border-radius: 4px;
+  font-size: 18px;
+}
+
+.menu_pane li a:hover {
+  background-color: var(--highlighted);
+}
+
+:global(.active) {
+  color: var(--accent);
+}
+
+/** Detail pane */
+.detail_pane {
+  @include pane;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.detail_pane .group {
+  display: flex;
+  align-items: center;
+}
+
+.group label {
+  text-rendering: optimizeLegibility;
+  line-height: 1.8em;
+  margin-inline-end: 8px;
+}
+
+.group input {
+  margin-block: 4px;
+  margin-inline-end: 8px;
+  padding: 8px;
+  padding-inline-start: 30px;
+  background-color: var(--background);
+  background-repeat: no-repeat;
+  background-size: 16px;
+  background-position: center left 8px;
+  color: var(--grey900);
+  border: 1px solid var(--grey600);
+  border-radius: 4px;
+  flex: 1;
+}
+
+.group button {
+  min-width: 150px;
+  margin: 4px 0;
+  font-weight: 600;
+  appearance: none;
+  color: var(--grey900);
+  background-color: var(--background);
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 8px 15px;
+}
+
+.group button:hover {
+  background-color: var(--grey400);
+}
+
+.detail_pane section {
+  background-color: var(--background-alt);
+  padding: 24px 16px;
+  border-radius: 4px;
+}
+
+.detail_pane section h2 {
+  margin-block-start: 0;
+}
