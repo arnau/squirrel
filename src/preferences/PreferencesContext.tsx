@@ -2,9 +2,13 @@ import { invoke } from "@tauri-apps/api";
 import { createContext, createResource, useContext } from "solid-js"
 
 async function fetchSection(id: string) {
-  const data = await invoke("fetch_pref_section", { id })
-
-  return data
+  try {
+    const data = await invoke("fetch_preferences", { id })
+    return data
+  } catch (error) {
+    console.error(error)
+    throw error
+  }
 }
 
 // Data function

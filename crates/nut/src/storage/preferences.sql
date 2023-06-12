@@ -16,8 +16,9 @@ CREATE TABLE IF NOT EXISTS preferences (
 -- Connectors for BackBlaze.
 CREATE TABLE IF NOT EXISTS connector (
     id             text      NOT NULL PRIMARY KEY, -- backblaze key id
-    name           text      NOT NULL, -- backblaze key name
-    secret_key     boolean   NOT NULL, -- the actual value is stored in the keyring
+    key_name       text      NOT NULL, -- backblaze key name
+    bucket_name    text      NOT NULL, -- backblaze bucket name
+    secret_key     boolean   NOT NULL, -- the actual value is stored in the SO keyring
     kind           text      NOT NULL, -- always 'backblaze'
     creation_stamp timestamp NOT NULL
 );

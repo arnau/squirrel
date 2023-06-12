@@ -13,7 +13,8 @@ export function App() {
 
   onMount(async () => {
     unlisten = await listen("navigate", async (event) => {
-      navigate(`/${event.payload}`)
+      const newRoute = `/${event.payload}`
+      navigate(newRoute)
       await appWindow.setFocus()
     })
   })

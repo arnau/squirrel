@@ -17,8 +17,10 @@ pub async fn open_inspector(handle: tauri::AppHandle) {
     .focused(true)
     .build()
     .unwrap();
-
-    window.open_devtools();
+    #[cfg(debug_assertions)] // only include this code on debug builds
+    {
+        window.open_devtools();
+    }
     // });
 }
 
@@ -36,7 +38,10 @@ pub fn open_inspector2(handle: tauri::AppHandle) {
         .build()
         .unwrap();
 
-        window.open_devtools();
+        #[cfg(debug_assertions)] // only include this code on debug builds
+        {
+            window.open_devtools();
+        }
     });
 }
 

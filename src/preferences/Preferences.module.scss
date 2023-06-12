@@ -73,11 +73,7 @@
   margin-block: 4px;
   margin-inline-end: 8px;
   padding: 8px;
-  padding-inline-start: 30px;
   background-color: var(--background);
-  background-repeat: no-repeat;
-  background-size: 16px;
-  background-position: center left 8px;
   color: var(--grey900);
   border: 1px solid var(--grey600);
   border-radius: 4px;
@@ -100,10 +96,12 @@
   background-color: var(--grey400);
 }
 
+
 .detail_pane section {
   background-color: var(--background-alt);
   padding: 24px 16px;
   border-radius: 4px;
+  margin-block-start: 16px;
 }
 
 .detail_pane section h2 {

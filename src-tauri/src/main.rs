@@ -161,13 +161,19 @@ fn main() -> anyhow::Result<()> {
             locate_folders,
             locate_asset_page,
             fetch_folder_details,
-            connect,
             fetch_thumbnail,
+
+            connect,
+
             inspect_logs,
             prune_logs,
             open_inspector,
 
-            fetch_pref_section,
+            fetch_preferences,
+            store_preference,
+            store_connector,
+            store_source,
+            store_source_connector,
         ])
         .menu(Menu::with_items([
             app_menu(&ctx.package_info().name.to_string()),
@@ -189,7 +195,7 @@ fn main() -> anyhow::Result<()> {
                 }
                 "preferences" => event
                     .window()
-                    .emit_to("main", "navigate", "preferences")
+                    .emit_to("main", "navigate", "preferences/general")
                     .unwrap(),
                 "go:catalogue" => event
                     .window()
