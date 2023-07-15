@@ -136,7 +136,7 @@ fn main() -> anyhow::Result<()> {
     console_subscriber::init();
     let ctx = tauri::generate_context!();
     // TODO: resolve the db path with dirs.
-    let db_location = "/Users/arnau/Library/ApplicationSupport/net.seachess.squirrel/squirrel.db";
+    let db_location = "/Users/arnau/Library/Application Support/net.seachess.squirrel/squirrel.db";
     dbg!(&db_location);
     let pool = starter::start(db_location)?;
 
