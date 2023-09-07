@@ -1,6 +1,17 @@
-use serde_json::json;
-
+use crate::Fort;
+use crate::entities::Connector;
+use crate::entities::connector::{NewConnector, ConnectorId};
 use crate::{entities::storage::Pool, Result};
+use chrono::Utc;
+use serde_json::json;
+use crate::repositories::PreferencesRepository;
+use anyhow::{anyhow as ah, bail};
+use rusqlite::Error as RusqliteError;
+
+
+type SourceId = String;
+type Source = serde_json::Value;
+
 
 pub fn get_section(pool: &Pool, id: &str) -> Result<serde_json::Value> {
     let res = match id {
@@ -20,22 +31,65 @@ pub fn set_preference(pool: &Pool, key: &str, value: &str) -> Result<()> {
     Ok(())
 }
 
-type Connector = serde_json::Value;
-pub fn set_connector(pool: &Pool, connector: Connector) -> Result<()> {
+
+/// Stores a new connector putting the given secret key into the SO keychain.
+pub fn set_connector(pool: &Pool, new_connector: NewConnector) -> Result<Connector> {
+    let fort = Fort::new("squirrel".to_string());
+    let mut conn = pool.get()?;
+    let tx = conn.transaction()?;
+    let preferences_repository = PreferencesRepository(&tx);
+
+    let application_id = format!("{}:{}", &new_connector.id, &new_connector.kind);
+
+    let connector = Connector {
+        id: new_connector.id,
+        key_name: new_connector.key_name,
+        bucket_name: new_connector.bucket_name,
+        secret_key: true,
+        kind: new_connector.kind,
+        creation_stamp: Utc::now().to_rfc3339(),
+    };
+
+    preferences_repository.insert_connector(&connector)?;
+
+    // Attempt to set the application key after attempting to store the
+    // connector such that if either fails, everything is rolled back;
+    fort.set_application_key(&application_id, &new_connector.secret_key)?;
+
+    tx.commit()?;
+
+    Ok(connector)
+}
+
+pub fn remove_connector(pool: &Pool, connector_id: ConnectorId) -> Result<()> {
+    let fort = Fort::new("squirrel".to_string());
+    let mut conn = pool.get()?;
+    let tx = conn.transaction()?;
+    let preferences_repository = PreferencesRepository(&tx);
+
+    let connector = preferences_repository.get_connector(&connector_id)?;
+    let application_id = format!("{}:{}", &connector_id, &connector.kind);
+
+    preferences_repository.delete_connector(&connector_id)?;
+
+    fort.delete_application_key(&application_id)?;
+
+    tx.commit()?;
+
     Ok(())
 }
-type Source = serde_json::Value;
+
 pub fn set_source(pool: &Pool, source: Source) -> Result<()> {
     Ok(())
 }
 
-type SourceId = String;
-type ConnectorId = String;
-pub fn set_source_connector(pool: &Pool, source_id: &SourceId, connector_id: &ConnectorId) -> Result<()> {
+pub fn set_source_connector(
+    pool: &Pool,
+    source_id: &SourceId,
+    connector_id: &ConnectorId,
+) -> Result<()> {
     Ok(())
 }
-
-
 
 fn general_section(pool: &Pool) -> Result<serde_json::Value> {
     // TODO: Fetch info at bootstrap
@@ -50,18 +104,13 @@ fn general_section(pool: &Pool) -> Result<serde_json::Value> {
 }
 
 fn connectors_section(pool: &Pool) -> Result<serde_json::Value> {
+    let conn = pool.get()?;
+    let preferences_repository = PreferencesRepository(&conn);
+    let list = preferences_repository.get_connectors()?;
+
     let res = json!({
        "id": "connectors",
-       "connectors": [
-           {
-               "id": "6ad327d8a3d112847a520f17",
-               "key_name": "Squirrel-Keyname",
-               "bucket_name": "Squirrel-Bucketname",
-               "secret_key": true,
-               "kind": "backblaze",
-               "creation_stamp": "2023-06-12T12:13:14Z",
-           }
-       ]
+       "connectors": list,
     });
 
     Ok(res)

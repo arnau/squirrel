@@ -1,5 +1,6 @@
 pub mod asset;
 pub mod catalogue;
+pub mod connector;
 pub mod entry;
 pub mod event;
 pub mod import;
@@ -19,3 +20,4 @@ pub use result::Result;
 pub use root::Root;
 pub use source::Source;
 pub use storage::{Storage, StorageError};
+pub use connector::Connector;

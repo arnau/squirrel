@@ -172,6 +172,7 @@ fn main() -> anyhow::Result<()> {
             fetch_preferences,
             store_preference,
             store_connector,
+            remove_connector,
             store_source,
             store_source_connector,
         ])

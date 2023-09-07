@@ -7,6 +7,7 @@ pub mod root;
 pub mod source;
 pub mod state;
 pub mod stem;
+pub mod preferences;
 
 pub trait Repository {}
 
@@ -19,3 +20,4 @@ pub use root::RootRepository;
 pub use source::SourceRepository;
 pub use state::StateRepository;
 pub use stem::StemRepository;
+pub use preferences::PreferencesRepository;

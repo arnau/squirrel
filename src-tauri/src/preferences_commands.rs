@@ -36,9 +36,9 @@ pub async fn store_preference(
 
 #[tauri::command]
 pub async fn store_connector(
-    connector: serde_json::Value,
+    connector: nut::entities::connector::NewConnector,
     pool: tauri::State<'_, Pool>,
-) -> Result<(), String> {
+) -> Result<nut::entities::Connector, String> {
     let res = configurator::set_connector(&pool, connector);
 
     match res {
@@ -49,6 +49,23 @@ pub async fn store_connector(
         }
     }
 }
+
+#[tauri::command]
+pub async fn remove_connector(
+    connector_id: nut::entities::connector::ConnectorId,
+    pool: tauri::State<'_, Pool>,
+) -> Result<(), String> {
+    let res = configurator::remove_connector(&pool, connector_id);
+
+    match res {
+        Ok(state) => Ok(state),
+        Err(err) => {
+            dbg!(&err);
+            Err(err.to_string())
+        }
+    }
+}
+
 
 #[tauri::command]
 pub async fn store_source(

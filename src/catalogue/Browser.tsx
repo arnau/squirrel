@@ -19,7 +19,6 @@ export function Browser() {
 
   createEffect(() => {
     // TODO: Consider using data functions instead.
-    console.log(pathname)
     const id = params.id ?? ""
     navigate(id)
   })

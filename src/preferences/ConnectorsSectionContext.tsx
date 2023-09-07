@@ -1,8 +1,16 @@
 import { invoke } from "@tauri-apps/api";
-import { createContext, useContext } from "solid-js"
+import { createContext, createSignal, useContext } from "solid-js"
 import { createStore } from "solid-js/store";
 
 type ConnectorId = string
+
+interface NewConnector {
+  id: ConnectorId,
+  key_name: string,
+  bucket_name: string,
+  secret_key: string,
+  kind: string,
+}
 
 interface Connector {
   id: ConnectorId,
@@ -15,32 +23,71 @@ interface Connector {
 
 interface ConnectorsSection {
   id: string,
-  connectors: Connector,
+  connectors: Array<Connector>,
 }
 
 export const ConnectorsSectionContext = createContext()
 export function ConnectorsSectionProvider(props: any) {
   const [store, setStore] = createStore<ConnectorsSection>(props.value)
 
-  // const setDownloadPath = async (path: string) => {
-  //   try {
-  //     setStore("download_path", path)
-  //     await invoke("store_preference", { key: "download_path", value: store.download_path })
-  //   } catch (error) {
-  //     console.error(error)
-  //     throw error
-  //   }
-  // }
+  // New Connector form
+  const emptyForm = () => ({
+    id: "",
+    key_name: "",
+    bucket_name: "",
+    secret_key: "",
+    kind: "backblaze",
+  })
+  const [form, setForm] = createStore<NewConnector>(emptyForm())
+  const [formError, setFormError] = createSignal()
+  const [actionErrors, setActionErrors] = createStore<object>({})
+
+  const removeFromList = (connectorId: ConnectorId) =>
+    setStore("connectors", store => store.filter(connector => connector.id !== connectorId))
+  const addToList = (connector: Connector) =>
+    setStore("connectors", store => [...store, connector])
+
+  const storeConnector = async (newConnector: NewConnector) => {
+    try {
+      let connector: Connector = await invoke("store_connector", {connector: newConnector})
+      addToList(connector)
+      setForm(emptyForm())
+    } catch (error) {
+      setFormError(error)
+    }
+  }
+
+  const removeConnector = async (connectorId: ConnectorId) => {
+    try {
+      await invoke("remove_connector", {connectorId})
+      setActionErrors({[connectorId]: undefined})
+      removeFromList(connectorId)
+    } catch (error) {
+      setActionErrors({[connectorId]: error})
+    }
+  }
 
   const value = [
     // read
     {
       store,
-      connectorsList() { return store.connectors }
+      connectorsList() { return store.connectors },
+      form,
+      formError,
+      actionErrors,
     },
 
     // write
     {
+      setForm,
+      cancelForm() {
+        setForm(emptyForm())
+        setFormError(null)
+      },
+      submitForm() {
+        storeConnector(form)
+      },
+      removeConnector,
     }
   ]
 

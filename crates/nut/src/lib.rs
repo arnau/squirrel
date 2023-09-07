@@ -15,3 +15,5 @@ pub type Version = [u16; 3];
 pub const VERSION: Version = [0, 1, 0];
 
 pub use entities::{Result, Storage};
+
+pub use nut_lock::Fort;
